@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 import { getEvent, getEventUsers } from "@/lib/events";
 
@@ -12,6 +12,10 @@ type Usuario = {
   displayName?: string;
   foto?: string;
   email?: string;
+  edad?: string;
+  genero?: string;
+  busca?: string;
+  intereses?: string[];
   eventoId?: string;
 };
 
@@ -22,6 +26,8 @@ export default function EventoAdminPage(){
 
   const params = useParams();
 
+  const router = useRouter();
+
 
   const id = params.id as string;
 
@@ -29,9 +35,11 @@ export default function EventoAdminPage(){
 
   const [evento,setEvento] = useState<any>(null);
 
-  const [usuarios,setUsuarios] = useState<Usuario[]>([]);
+  const [usuarios,setUsuarios] =
+    useState<Usuario[]>([]);
 
-  const [cargando,setCargando] = useState(true);
+  const [cargando,setCargando] =
+    useState(true);
 
 
 
@@ -47,6 +55,7 @@ export default function EventoAdminPage(){
         await getEvent(id);
 
 
+
       const participantes =
         await getEventUsers(id);
 
@@ -54,7 +63,9 @@ export default function EventoAdminPage(){
 
       setEvento(datosEvento);
 
-      setUsuarios(participantes as Usuario[]);
+      setUsuarios(
+        participantes as Usuario[]
+      );
 
 
 
@@ -145,6 +156,7 @@ export default function EventoAdminPage(){
       ">
 
 
+
         <h1 className="
           text-3xl
           font-bold
@@ -157,6 +169,7 @@ export default function EventoAdminPage(){
         </h1>
 
 
+
         <p className="
           text-gray-600
           mb-8
@@ -165,6 +178,7 @@ export default function EventoAdminPage(){
           Participantes: {usuarios.length}
 
         </p>
+
 
 
 
@@ -192,6 +206,7 @@ export default function EventoAdminPage(){
             ">
 
 
+
               {
                 usuarios.map((usuario)=>(
 
@@ -200,42 +215,138 @@ export default function EventoAdminPage(){
 
                     key={usuario.id}
 
+                    onClick={()=> 
+                      router.push(
+                        `/admin/usuario/${usuario.id}`
+                      )
+                    }
+
                     className="
                       bg-white
                       rounded-2xl
                       shadow
                       p-5
+                      cursor-pointer
+                      hover:shadow-xl
+                      transition
                     "
 
                   >
 
 
-                    <h2 className="
-                      text-xl
-                      font-bold
-                      text-black
+
+                    <div className="
+                      flex
+                      items-center
+                      gap-4
                     ">
 
-                      👤 {
-                        usuario.nombre ||
-                        usuario.displayName ||
-                        "Usuario"
+
+
+                      {
+                        usuario.foto ? (
+
+                          <img
+
+                            src={usuario.foto}
+
+                            alt={
+                              usuario.nombre ||
+                              "Usuario"
+                            }
+
+                            className="
+                              w-20
+                              h-20
+                              rounded-full
+                              object-cover
+                            "
+
+                          />
+
+                        ) : (
+
+
+                          <div className="
+                            w-20
+                            h-20
+                            rounded-full
+                            bg-gray-300
+                            flex
+                            items-center
+                            justify-center
+                            text-3xl
+                          ">
+
+                            👤
+
+                          </div>
+
+
+                        )
                       }
 
-                    </h2>
 
 
-                    {
-                      usuario.email && (
 
-                        <p className="text-gray-500">
 
-                          {usuario.email}
+                      <div>
 
-                        </p>
 
-                      )
-                    }
+                        <h2 className="
+                          text-xl
+                          font-bold
+                          text-black
+                        ">
+
+
+                          {
+                            usuario.nombre ||
+                            usuario.displayName ||
+                            "Usuario"
+                          }
+
+
+                        </h2>
+
+
+
+
+                        {
+                          usuario.edad && (
+
+                            <p className="text-gray-600">
+
+                              Edad: {usuario.edad}
+
+                            </p>
+
+                          )
+                        }
+
+
+
+
+
+                        {
+                          usuario.busca && (
+
+                            <p className="text-gray-600">
+
+                              Busca: {usuario.busca}
+
+                            </p>
+
+                          )
+                        }
+
+
+
+                      </div>
+
+
+
+                    </div>
 
 
 
@@ -247,12 +358,14 @@ export default function EventoAdminPage(){
               }
 
 
+
             </div>
 
 
           )
 
         }
+
 
 
 
