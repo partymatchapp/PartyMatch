@@ -23,7 +23,6 @@ import Chats from "@/components/Chats";
 export default function EventoPage(){
 
 
-
   const params = useParams();
 
   const id = params.id as string;
@@ -33,29 +32,23 @@ export default function EventoPage(){
 
 
 
-
   const [evento,setEvento] = useState<any>(null);
 
   const [cargando,setCargando] = useState(true);
 
+  const [error,setError] = useState("");
+
 
 
   const [vista,setVista] = useState<
-
     "discovery" |
     "notificaciones" |
     "matches" |
     "chats"
-
   >("discovery");
 
 
-
   const [contador,setContador] = useState(0);
-
-
-
-
 
 
 
@@ -65,26 +58,34 @@ export default function EventoPage(){
 
 
     if(!user){
-
       return;
+    }
+
+
+    try{
+
+
+      const cantidad = await getUnreadNotificationsCount(
+        user.uid
+      );
+
+
+      setContador(cantidad);
+
+
+    }catch(error){
+
+
+      console.error(
+        "Error contador:",
+        error
+      );
+
 
     }
 
 
-
-    const cantidad = await getUnreadNotificationsCount(
-
-      user.uid
-
-    );
-
-
-
-    setContador(cantidad);
-
-
   }
-
 
 
 
@@ -99,23 +100,63 @@ export default function EventoPage(){
     async function cargarEvento(){
 
 
+      try{
 
-      if(!id){
 
-        return;
+        if(!id){
+
+          throw new Error(
+            "No existe ID del evento"
+          );
+
+        }
+
+
+
+        console.log(
+          "Buscando evento:",
+          id
+        );
+
+
+
+        const datos = await getEvent(id);
+
+
+
+        console.log(
+          "Evento encontrado:",
+          datos
+        );
+
+
+
+        setEvento(datos);
+
+
+
+      }catch(error:any){
+
+
+        console.error(
+          "Error cargando evento:",
+          error
+        );
+
+
+        setError(
+          error.message || 
+          "Error cargando evento"
+        );
+
+
+      }finally{
+
+
+        setCargando(false);
+
 
       }
-
-
-
-      const datos = await getEvent(id);
-
-
-
-      setEvento(datos);
-
-      setCargando(false);
-
 
 
     }
@@ -135,8 +176,6 @@ export default function EventoPage(){
 
 
 
-
-
   useEffect(()=>{
 
 
@@ -147,18 +186,32 @@ export default function EventoPage(){
       if(user && id){
 
 
-
-        await joinEvent(
-
-          user.uid,
-
-          id
-
-        );
+        try{
 
 
+          await joinEvent(
 
-        await cargarContador();
+            user.uid,
+
+            id
+
+          );
+
+
+          await cargarContador();
+
+
+
+        }catch(error){
+
+
+          console.error(
+            "Error uniendo usuario:",
+            error
+          );
+
+
+        }
 
 
       }
@@ -173,9 +226,6 @@ export default function EventoPage(){
 
 
   },[user,id]);
-
-
-
 
 
 
@@ -213,6 +263,51 @@ export default function EventoPage(){
 
 
 
+  if(error){
+
+
+    return(
+
+      <div className="
+        min-h-screen
+        bg-black
+        text-white
+        flex
+        flex-col
+        items-center
+        justify-center
+        p-6
+        text-center
+      ">
+
+        <h1 className="
+          text-2xl
+          font-bold
+          mb-4
+        ">
+
+          Error cargando evento
+
+        </h1>
+
+
+        <p className="text-gray-400">
+
+          {error}
+
+        </p>
+
+
+      </div>
+
+    );
+
+
+  }
+
+
+
+
 
 
 
@@ -238,8 +333,6 @@ export default function EventoPage(){
 
 
   }
-
-
 
 
 
@@ -273,9 +366,7 @@ export default function EventoPage(){
           text-white
         ">
 
-
           {evento.nombre} 🎉
-
 
         </h1>
 
@@ -283,15 +374,7 @@ export default function EventoPage(){
 
 
 
-        <EventLobby
-
-          eventoId={id}
-
-        />
-
-
-
-
+        <EventLobby eventoId={id}/>
 
 
 
@@ -308,12 +391,8 @@ export default function EventoPage(){
 
 
 
-
-
           <button
-
             onClick={()=>setVista("discovery")}
-
             className="
               bg-blue-600
               text-white
@@ -322,7 +401,6 @@ export default function EventoPage(){
               rounded-xl
               font-bold
             "
-
           >
 
             🔍 Descubrir
@@ -332,15 +410,8 @@ export default function EventoPage(){
 
 
 
-
-
-
-
-
           <button
-
             onClick={()=>setVista("notificaciones")}
-
             className="
               bg-black
               border
@@ -351,11 +422,9 @@ export default function EventoPage(){
               rounded-xl
               font-bold
             "
-
           >
 
             🔔 Notificaciones
-
 
             {
               contador > 0 && (
@@ -366,7 +435,6 @@ export default function EventoPage(){
                   px-2
                   py-1
                   rounded-full
-                  text-sm
                 ">
 
                   {contador}
@@ -376,21 +444,14 @@ export default function EventoPage(){
               )
             }
 
-
           </button>
 
 
 
 
 
-
-
-
-
           <button
-
             onClick={()=>setVista("matches")}
-
             className="
               bg-black
               border
@@ -401,7 +462,6 @@ export default function EventoPage(){
               rounded-xl
               font-bold
             "
-
           >
 
             🎉 Matches
@@ -412,14 +472,8 @@ export default function EventoPage(){
 
 
 
-
-
-
-
           <button
-
             onClick={()=>setVista("chats")}
-
             className="
               bg-black
               border
@@ -430,17 +484,11 @@ export default function EventoPage(){
               rounded-xl
               font-bold
             "
-
           >
 
             💬 Chats
 
           </button>
-
-
-
-
-
 
 
 
@@ -450,53 +498,25 @@ export default function EventoPage(){
 
 
 
-
-
-
-
         {
           vista === "discovery" ? (
 
-
-            <Discovery
-
-              eventoId={id}
-
-            />
-
+            <Discovery eventoId={id}/>
 
           ) : vista === "notificaciones" ? (
 
-
-
-            <Notifications />
-
-
+            <Notifications/>
 
           ) : vista === "matches" ? (
 
-
-
-            <Matches />
-
-
+            <Matches/>
 
           ) : (
 
-
-
-            <Chats />
-
-
+            <Chats/>
 
           )
-
         }
-
-
-
-
-
 
 
 

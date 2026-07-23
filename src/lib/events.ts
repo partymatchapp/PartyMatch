@@ -13,90 +13,293 @@ import {
 
 import { db } from "./firebase";
 
+
+
 export async function createEvent(
   nombre: string,
   fecha: string,
   userId: string
 ) {
+
   const eventosRef = collection(db, "eventos");
 
+
   const nuevoEvento = await addDoc(eventosRef, {
+
     nombre,
     fecha,
     activo: true,
     creadoPor: userId,
     creadoEn: new Date(),
+
   });
 
-  console.log("🎉 Evento creado:", nuevoEvento.id);
+
+  console.log(
+    "🎉 Evento creado:",
+    nuevoEvento.id
+  );
+
 
   return nuevoEvento.id;
+
 }
 
-export async function getEvent(eventId: string) {
-  const eventoRef = doc(db, "eventos", eventId);
 
-  const eventoSnapshot = await getDoc(eventoRef);
 
-  if (eventoSnapshot.exists()) {
-    return {
-      id: eventoSnapshot.id,
-      ...eventoSnapshot.data(),
-    };
+
+
+
+export async function getEvent(
+  eventId: string
+) {
+
+
+  try {
+
+
+    console.log(
+      "🔎 Buscando evento:",
+      eventId
+    );
+
+
+
+    if(!eventId){
+
+      console.error(
+        "❌ Evento ID vacío"
+      );
+
+      return null;
+
+    }
+
+
+
+
+    const eventoRef = doc(
+      db,
+      "eventos",
+      eventId
+    );
+
+
+
+    const eventoSnapshot = await getDoc(
+      eventoRef
+    );
+
+
+
+
+    console.log(
+      "📄 Existe evento:",
+      eventoSnapshot.exists()
+    );
+
+
+
+
+
+    if(eventoSnapshot.exists()){
+
+
+      return {
+
+        id:eventoSnapshot.id,
+
+        ...eventoSnapshot.data()
+
+      };
+
+
+    }
+
+
+
+    return null;
+
+
+
+  } catch(error){
+
+
+    console.error(
+      "❌ Error cargando evento:",
+      error
+    );
+
+
+    throw error;
+
+
   }
 
-  return null;
+
 }
 
-export async function getEventUsers(eventId: string) {
-  const usuariosRef = collection(db, "usuarios");
+
+
+
+
+
+
+export async function getEventUsers(
+  eventId:string
+) {
+
+
+  const usuariosRef = collection(
+    db,
+    "usuarios"
+  );
+
+
 
   const usuariosQuery = query(
+
     usuariosRef,
-    where("eventoId", "==", eventId)
+
+    where(
+      "eventoId",
+      "==",
+      eventId
+    )
+
   );
 
-  const resultado = await getDocs(usuariosQuery);
 
-  return resultado.docs.map((item) => ({
-    id: item.id,
-    ...item.data(),
-  }));
+
+  const resultado = await getDocs(
+    usuariosQuery
+  );
+
+
+
+  return resultado.docs.map(
+    (item)=>({
+
+      id:item.id,
+
+      ...item.data()
+
+    })
+  );
+
+
 }
 
-export async function getMyEvents(userId: string) {
-  const eventosRef = collection(db, "eventos");
+
+
+
+
+
+
+export async function getMyEvents(
+  userId:string
+) {
+
+
+  const eventosRef = collection(
+    db,
+    "eventos"
+  );
+
+
 
   const q = query(
+
     eventosRef,
-    where("creadoPor", "==", userId),
-    orderBy("creadoEn", "desc")
+
+    where(
+      "creadoPor",
+      "==",
+      userId
+    ),
+
+    orderBy(
+      "creadoEn",
+      "desc"
+    )
+
   );
+
+
 
   const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((item) => ({
-    id: item.id,
-    ...item.data(),
-  }));
+
+
+  return snapshot.docs.map(
+    (item)=>({
+
+      id:item.id,
+
+      ...item.data()
+
+    })
+  );
+
+
 }
 
-export async function deleteEvent(eventId: string) {
+
+
+
+
+
+
+export async function deleteEvent(
+  eventId:string
+) {
+
+
   await deleteDoc(
-    doc(db, "eventos", eventId)
+    doc(
+      db,
+      "eventos",
+      eventId
+    )
   );
+
+
 }
+
+
+
+
+
+
 
 export async function updateEvent(
-  eventId: string,
-  nombre: string,
-  fecha: string
+
+  eventId:string,
+
+  nombre:string,
+
+  fecha:string
+
 ) {
+
+
   await updateDoc(
-    doc(db, "eventos", eventId),
+
+    doc(
+      db,
+      "eventos",
+      eventId
+    ),
+
     {
+
       nombre,
+
       fecha,
+
     }
+
   );
+
+
 }

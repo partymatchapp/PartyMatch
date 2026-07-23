@@ -20,11 +20,24 @@ export default function EventLobby({
 
     async function cargarUsuarios() {
 
-      const resultado = await getEventUsers(eventoId);
+      try {
 
-      setUsuarios(resultado);
+        const resultado = await getEventUsers(eventoId);
 
-      setCargando(false);
+        setUsuarios(resultado);
+
+      } catch (error) {
+
+        console.error(
+          "Error cargando participantes:",
+          error
+        );
+
+      } finally {
+
+        setCargando(false);
+
+      }
 
     }
 
@@ -33,6 +46,8 @@ export default function EventLobby({
 
 
   }, [eventoId]);
+
+
 
 
 
@@ -52,12 +67,19 @@ export default function EventLobby({
 
 
 
+
+
   return (
 
     <div className="mt-8">
 
 
-      <h2 className="text-xl font-bold text-gray-800 text-center">
+      <h2 className="
+        text-xl
+        font-bold
+        text-white
+        text-center
+      ">
 
         👥 Participantes ({usuarios.length})
 
@@ -65,52 +87,115 @@ export default function EventLobby({
 
 
 
+
+
       <div className="mt-5 space-y-3">
 
 
-        {usuarios.map((usuario) => (
-
-          <div
-            key={usuario.id}
-            className="
-              flex
-              items-center
-              gap-4
-              bg-gray-100
-              rounded-xl
-              p-3
-            "
-          >
+        {
+          usuarios.map((usuario) => (
 
 
-            <img
-              src={usuario.foto}
-              alt={usuario.nombre}
+            <div
+
+              key={usuario.id}
+
               className="
-                w-12
-                h-12
-                rounded-full
+                flex
+                items-center
+                gap-4
+                bg-gray-100
+                rounded-xl
+                p-3
               "
-            />
+
+            >
 
 
-            <div>
-
-              <p className="font-semibold text-gray-800">
-                {usuario.nombre}
-              </p>
 
 
-              <p className="text-sm text-gray-500">
-                Participante
-              </p>
+
+              {
+                usuario.foto ? (
+
+                  <img
+
+                    src={usuario.foto}
+
+                    alt={usuario.nombre || "Usuario"}
+
+                    className="
+                      w-12
+                      h-12
+                      rounded-full
+                      object-cover
+                    "
+
+                  />
+
+                ) : (
+
+
+                  <div className="
+                    w-12
+                    h-12
+                    rounded-full
+                    bg-gray-300
+                    flex
+                    items-center
+                    justify-center
+                    text-2xl
+                  ">
+
+                    👤
+
+                  </div>
+
+
+                )
+              }
+
+
+
+
+
+
+              <div>
+
+
+                <p className="
+                  font-semibold
+                  text-gray-800
+                ">
+
+                  {usuario.nombre || "Participante"}
+
+                </p>
+
+
+
+
+                <p className="
+                  text-sm
+                  text-gray-500
+                ">
+
+                  Participante
+
+                </p>
+
+
+              </div>
+
+
+
 
             </div>
 
 
-          </div>
+          ))
+        }
 
-        ))}
 
 
       </div>
