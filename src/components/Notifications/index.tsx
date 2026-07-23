@@ -8,12 +8,18 @@ import {
   getDocs,
   query,
   where,
-  orderBy
+  orderBy,
+  doc,
+  updateDoc
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
 
 import { useUser } from "@/context/UserContext";
+
+import {
+  markNotificationsAsRead
+} from "@/lib/notifications";
 
 
 
@@ -22,6 +28,8 @@ type Notificacion = {
   id:string;
 
   usuarioOrigen:string;
+
+  usuarioDestino:string;
 
   eventoId:string;
 
@@ -39,8 +47,9 @@ type Notificacion = {
 
 
 
-export default function Notifications(){
 
+
+export default function Notifications(){
 
 
   const { user } = useUser();
@@ -49,9 +58,14 @@ export default function Notifications(){
 
 
 
-  const [notificaciones,setNotificaciones] = useState<Notificacion[]>([]);
+  const [notificaciones,setNotificaciones] =
+    useState<Notificacion[]>([]);
 
-  const [cargando,setCargando] = useState(true);
+
+  const [cargando,setCargando] =
+    useState(true);
+
+
 
 
 
@@ -60,7 +74,6 @@ export default function Notifications(){
 
 
   async function cargarNotificaciones(){
-
 
 
     if(!user){
@@ -74,33 +87,22 @@ export default function Notifications(){
     const q = query(
 
       collection(
-
         db,
-
         "notificaciones"
-
       ),
 
       where(
-
         "usuarioDestino",
-
         "==",
-
         user.uid
-
       ),
 
       orderBy(
-
         "creadoEn",
-
         "desc"
-
       )
 
     );
-
 
 
 
@@ -109,30 +111,28 @@ export default function Notifications(){
 
 
 
-
-
     const lista:Notificacion[] = [];
-
-
 
 
 
     snapshot.forEach((item)=>{
 
-  const data = item.data() as Notificacion;
+
+      const data =
+        item.data() as Notificacion;
 
 
-  lista.push({
 
-    ...data,
+      lista.push({
 
-    id:item.id
+        ...data,
 
-  });
+        id:item.id
+
+      });
 
 
-});
-
+    });
 
 
 
@@ -152,13 +152,122 @@ export default function Notifications(){
 
 
 
+
+
+  async function abrirNotificacion(
+
+    item:Notificacion
+
+  ){
+
+
+    try{
+
+
+      if(!item.leido){
+
+
+        await updateDoc(
+
+          doc(
+
+            db,
+
+            "notificaciones",
+
+            item.id
+
+          ),
+
+          {
+
+            leido:true
+
+          }
+
+        );
+
+
+      }
+
+
+
+
+      router.push(
+
+        `/perfil/${item.usuarioOrigen}?evento=${item.eventoId}`
+
+      );
+
+
+
+    }catch(error){
+
+
+      console.error(
+
+        "Error leyendo notificación:",
+
+        error
+
+      );
+
+
+    }
+
+
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
   useEffect(()=>{
 
 
-    cargarNotificaciones();
+    async function iniciar(){
+
+
+      if(!user){
+
+        return;
+
+      }
+
+
+
+      await markNotificationsAsRead(
+
+        user.uid
+
+      );
+
+
+
+      await cargarNotificaciones();
+
+
+
+    }
+
+
+
+    iniciar();
+
 
 
   },[user]);
+
+
+
 
 
 
@@ -227,6 +336,8 @@ export default function Notifications(){
 
 
 
+
+
       {
         notificaciones.length === 0 ? (
 
@@ -257,16 +368,7 @@ export default function Notifications(){
 
                   key={item.id}
 
-                  onClick={()=>{
-
-                    router.push(
-
-                      `/perfil/${item.usuarioOrigen}?evento=${item.eventoId}`
-
-                    );
-
-
-                  }}
+                  onClick={()=>abrirNotificacion(item)}
 
                   className="
                     w-full
@@ -289,9 +391,7 @@ export default function Notifications(){
 
                     {
                       item.tipo === "match"
-
                       ? "🎉 "
-
                       : "❤️ "
                     }
 

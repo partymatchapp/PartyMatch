@@ -20,6 +20,9 @@ type TipoNotificacion =
 
 
 
+
+
+
 export async function createNotification(
 
   usuarioDestino:string,
@@ -36,15 +39,13 @@ export async function createNotification(
 
   fotoOrigen:string
 
-){
+):Promise<void>{
 
 
 
   const id =
 
     `${usuarioDestino}_${usuarioOrigen}_${eventoId}_${tipo}`;
-
-
 
 
 
@@ -184,7 +185,7 @@ export async function markNotificationsAsRead(
 
   usuarioId:string
 
-){
+):Promise<void>{
 
 
 
@@ -230,6 +231,7 @@ export async function markNotificationsAsRead(
 
 
 
+
   const actualizaciones = snapshot.docs.map(
 
     (item)=>
@@ -256,7 +258,20 @@ export async function markNotificationsAsRead(
 
 
 
-  await Promise.all(actualizaciones);
+
+  await Promise.all(
+
+    actualizaciones
+
+  );
+
+
+
+  console.log(
+
+    "🔔 Notificaciones marcadas como leídas"
+
+  );
 
 
 }

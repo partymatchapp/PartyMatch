@@ -16,6 +16,8 @@ import { db } from "@/lib/firebase";
 
 import { useUser } from "@/context/UserContext";
 
+import { createChat } from "@/lib/chat";
+
 
 
 type Match = {
@@ -32,6 +34,8 @@ type Match = {
 
 type Perfil = {
 
+  id:string;
+
   nombre:string;
 
   foto:string;
@@ -45,27 +49,24 @@ type Perfil = {
 export default function Matches(){
 
 
-
   const { user } = useUser();
 
   const router = useRouter();
 
 
 
-  const [matches,setMatches] = useState<any[]>([]);
-
-  const [cargando,setCargando] = useState(true);
-
+  const [matches,setMatches] =
+    useState<any[]>([]);
 
 
-
+  const [cargando,setCargando] =
+    useState(true);
 
 
 
 
 
   async function cargarMatches(){
-
 
 
     if(!user){
@@ -79,21 +80,14 @@ export default function Matches(){
     const q = query(
 
       collection(
-
         db,
-
         "matches"
-
       ),
 
       where(
-
         "usuarios",
-
         "array-contains",
-
         user.uid
-
       )
 
     );
@@ -101,9 +95,8 @@ export default function Matches(){
 
 
 
-
-    const snapshot = await getDocs(q);
-
+    const snapshot =
+      await getDocs(q);
 
 
 
@@ -118,19 +111,24 @@ export default function Matches(){
 
 
 
-      const data = item.data() as Match;
+      const data =
+        item.data() as Match;
 
 
 
-      const otroUsuario = data.usuarios.find(
 
-        (id)=>id !== user.uid
+      const otroUsuario =
+        data.usuarios.find(
+          (id)=>id !== user.uid
+        );
 
-      );
+
 
 
 
       let perfil:Perfil = {
+
+        id:"",
 
         nombre:"Usuario",
 
@@ -146,36 +144,40 @@ export default function Matches(){
 
 
 
-        const perfilSnap = await getDoc(
+        const perfilSnap =
+          await getDoc(
 
-          doc(
+            doc(
+              db,
+              "usuarios",
+              otroUsuario
+            )
 
-            db,
-
-            "usuarios",
-
-            otroUsuario
-
-          )
-
-        );
-
-
+          );
 
 
 
         if(perfilSnap.exists()){
 
 
-          const datos = perfilSnap.data();
+
+          const datos =
+            perfilSnap.data();
+
 
 
 
           perfil = {
 
-            nombre:datos.nombre || "Usuario",
+            id:otroUsuario,
 
-            foto:datos.foto || ""
+            nombre:
+              datos.nombre ||
+              "Usuario",
+
+            foto:
+              datos.foto ||
+              ""
 
           };
 
@@ -189,23 +191,22 @@ export default function Matches(){
 
 
 
-
-
       lista.push({
 
         id:item.id,
 
         eventoId:data.eventoId,
 
+        usuarioId:otroUsuario,
+
         perfil
+
 
       });
 
 
 
     }
-
-
 
 
 
@@ -225,10 +226,6 @@ export default function Matches(){
 
 
 
-
-
-
-
   useEffect(()=>{
 
 
@@ -238,6 +235,45 @@ export default function Matches(){
   },[user]);
 
 
+
+
+
+
+
+  async function abrirChat(
+    match:any
+  ){
+
+
+    if(!user || !match.usuarioId){
+
+      return;
+
+    }
+
+
+
+
+    const chatId =
+      await createChat(
+
+        match.eventoId,
+
+        user.uid,
+
+        match.usuarioId
+
+      );
+
+
+
+
+    router.push(
+      `/chat/${chatId}`
+    );
+
+
+  }
 
 
 
@@ -264,7 +300,6 @@ export default function Matches(){
 
 
   }
-
 
 
 
@@ -302,7 +337,6 @@ export default function Matches(){
 
 
 
-
       {
         matches.length === 0 ? (
 
@@ -330,7 +364,6 @@ export default function Matches(){
               matches.map((match)=>(
 
 
-
                 <div
 
                   key={match.id}
@@ -352,17 +385,24 @@ export default function Matches(){
 
 
 
-                  <div className="
-                    flex
-                    items-center
-                    gap-4
-                  ">
+                  <button
 
+                    onClick={()=>router.push(
+                      `/perfil/${match.perfil.id}`
+                    )}
+
+                    className="
+                      flex
+                      items-center
+                      gap-4
+                      text-left
+                    "
+
+                  >
 
 
                     {
                       match.perfil.foto && (
-
 
                         <img
 
@@ -376,7 +416,6 @@ export default function Matches(){
                           "
 
                         />
-
 
                       )
                     }
@@ -399,6 +438,7 @@ export default function Matches(){
                       </h2>
 
 
+
                       <p className="
                         text-green-400
                       ">
@@ -408,11 +448,12 @@ export default function Matches(){
                       </p>
 
 
+
                     </div>
 
 
 
-                  </div>
+                  </button>
 
 
 
@@ -423,7 +464,7 @@ export default function Matches(){
 
                   <button
 
-                    onClick={()=>router.push(`/chat/${match.id}`)}
+                    onClick={()=>abrirChat(match)}
 
                     className="
                       bg-blue-600
@@ -438,7 +479,6 @@ export default function Matches(){
                     💬 Chat
 
                   </button>
-
 
 
 
@@ -460,7 +500,6 @@ export default function Matches(){
         )
 
       }
-
 
 
 

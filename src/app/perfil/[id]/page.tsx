@@ -36,11 +36,23 @@ export default function PerfilPage(){
   const { user } = useUser();
 
 
-  const [perfil,setPerfil] = useState<any>(null);
 
-  const [matchId,setMatchId] = useState<string | null>(null);
+  const [perfil,setPerfil] =
+    useState<any>(null);
 
-  const [cargando,setCargando] = useState(true);
+
+  const [matchId,setMatchId] =
+    useState<string | null>(null);
+
+
+  const [cargando,setCargando] =
+    useState(true);
+
+
+  const [fotoGrande,setFotoGrande] =
+    useState("");
+
+
 
 
 
@@ -53,17 +65,21 @@ export default function PerfilPage(){
 
 
       if(!id){
+
         return;
+
       }
 
 
 
       const snap = await getDoc(
+
         doc(
           db,
           "usuarios",
           id
         )
+
       );
 
 
@@ -93,22 +109,22 @@ export default function PerfilPage(){
       ){
 
 
-        const match = await checkExistingMatch(
+        const match =
+          await checkExistingMatch(
 
-          eventoId,
+            eventoId,
 
-          user.uid,
+            user.uid,
 
-          id
+            id
 
-        );
+          );
 
 
         setMatchId(match);
 
 
       }
-
 
 
 
@@ -125,6 +141,8 @@ export default function PerfilPage(){
 
 
   },[id,user,eventoId]);
+
+
 
 
 
@@ -151,7 +169,6 @@ export default function PerfilPage(){
       </div>
 
     );
-
 
   }
 
@@ -181,8 +198,18 @@ export default function PerfilPage(){
 
     );
 
-
   }
+
+
+
+
+
+
+
+  const fotosExtra =
+    perfil.fotos || [];
+
+
 
 
 
@@ -214,6 +241,9 @@ export default function PerfilPage(){
 
 
 
+
+
+
         {
           perfil.foto ? (
 
@@ -221,7 +251,9 @@ export default function PerfilPage(){
 
               src={perfil.foto}
 
-              alt="perfil"
+              alt="foto principal"
+
+              onClick={()=>setFotoGrande(perfil.foto)}
 
               className="
                 w-40
@@ -232,6 +264,7 @@ export default function PerfilPage(){
                 mb-6
                 border-4
                 border-purple-500
+                cursor-pointer
               "
 
             />
@@ -256,7 +289,133 @@ export default function PerfilPage(){
             </div>
 
           )
+
         }
+
+
+
+
+
+
+
+
+        {
+          fotosExtra.length > 0 && (
+
+            <>
+
+              <p className="
+                text-gray-400
+                mb-3
+              ">
+
+                Fotos
+
+              </p>
+
+
+              <div className="
+                grid
+                grid-cols-3
+                gap-3
+                mb-6
+              ">
+
+
+                {
+                  fotosExtra.map(
+                    (foto:string,index:number)=>(
+
+                      <img
+
+                        key={index}
+
+                        src={foto}
+
+                        alt="foto adicional"
+
+                        onClick={()=>setFotoGrande(foto)}
+
+                        className="
+                          w-full
+                          h-24
+                          rounded-xl
+                          object-cover
+                          cursor-pointer
+                          border
+                          border-purple-400
+                        "
+
+                      />
+
+                    )
+
+                  )
+
+                }
+
+
+              </div>
+
+            </>
+
+          )
+
+        }
+
+
+
+
+
+
+
+
+
+        {
+          fotoGrande && (
+
+            <div
+
+              onClick={()=>setFotoGrande("")}
+
+              className="
+                fixed
+                inset-0
+                bg-black/90
+                z-50
+                flex
+                items-center
+                justify-center
+                p-5
+              "
+
+            >
+
+              <img
+
+                src={fotoGrande}
+
+                alt="foto grande"
+
+                onClick={(e)=>e.stopPropagation()}
+
+                className="
+                  max-w-full
+                  max-h-full
+                  rounded-2xl
+                  object-contain
+                "
+
+              />
+
+
+            </div>
+
+          )
+
+        }
+
+
 
 
 
@@ -272,6 +431,8 @@ export default function PerfilPage(){
           {perfil.nombre || "Usuario"}
 
         </h1>
+
+
 
 
 
@@ -383,6 +544,8 @@ export default function PerfilPage(){
           )
 
         }
+
+
 
 
 

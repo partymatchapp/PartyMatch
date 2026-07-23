@@ -34,21 +34,32 @@ export default function ChatPage(){
 
 
 
-  const [mensajes,setMensajes] = useState<any[]>([]);
-
-  const [texto,setTexto] = useState("");
-
-  const [nombre,setNombre] = useState("Chat");
-
-  const [foto,setFoto] = useState("");
-
-  const [eventoId,setEventoId] = useState("");
-
-  const [mostrarEmojis,setMostrarEmojis] = useState(false);
+  const [mensajes,setMensajes] =
+    useState<any[]>([]);
 
 
+  const [texto,setTexto] =
+    useState("");
 
 
+  const [nombre,setNombre] =
+    useState("Chat");
+
+
+  const [foto,setFoto] =
+    useState("");
+
+
+  const [eventoId,setEventoId] =
+    useState("");
+
+
+  const [mostrarFoto,setMostrarFoto] =
+    useState(false);
+
+
+  const [mostrarEmojis,setMostrarEmojis] =
+    useState(false);
 
 
 
@@ -64,31 +75,22 @@ export default function ChatPage(){
     }
 
 
-    const usuarioActual = user;
-
-
+    const uid = user.uid;
 
 
 
     async function cargarChat(){
 
 
-
       const chatSnap = await getDoc(
 
         doc(
-
           db,
-
           "chats",
-
           chatId
-
         )
 
       );
-
-
 
 
 
@@ -100,30 +102,23 @@ export default function ChatPage(){
 
 
 
-
-
-      const chat:any = chatSnap.data();
-
-
+      const chat:any =
+        chatSnap.data();
 
 
 
       setEventoId(
-
         chat.eventoId || ""
-
       );
 
 
 
 
 
-      const otroUsuario = chat.usuarios.find(
-
-        (id:string)=>id !== usuarioActual.uid
-
-      );
-
+      const otroUsuario =
+        chat.usuarios.find(
+          (id:string)=>id !== uid
+        );
 
 
 
@@ -135,13 +130,9 @@ export default function ChatPage(){
         const usuarioSnap = await getDoc(
 
           doc(
-
             db,
-
             "usuarios",
-
             otroUsuario
-
           )
 
         );
@@ -151,20 +142,18 @@ export default function ChatPage(){
         if(usuarioSnap.exists()){
 
 
-          const datos:any = usuarioSnap.data();
+          const datos:any =
+            usuarioSnap.data();
+
 
 
           setNombre(
-
             datos.nombre || "Usuario"
-
           );
 
 
           setFoto(
-
             datos.foto || ""
-
           );
 
 
@@ -174,8 +163,8 @@ export default function ChatPage(){
       }
 
 
-
     }
+
 
 
 
@@ -187,19 +176,20 @@ export default function ChatPage(){
 
 
 
-    const cancelar = listenMessages(
 
-      chatId,
+    const cancelar =
+      listenMessages(
 
-      (lista)=>{
+        chatId,
 
+        (lista)=>{
 
-        setMensajes(lista);
+          setMensajes(lista);
 
+        }
 
-      }
+      );
 
-    );
 
 
 
@@ -209,7 +199,7 @@ export default function ChatPage(){
 
       chatId,
 
-      usuarioActual.uid
+      uid
 
     );
 
@@ -217,11 +207,8 @@ export default function ChatPage(){
 
 
 
-    return ()=>{
 
-      cancelar();
-
-    };
+    return ()=>cancelar();
 
 
 
@@ -233,25 +220,17 @@ export default function ChatPage(){
 
 
 
-
-
   async function enviar(){
 
 
-
     if(
-
       !texto.trim() ||
-
       !user
-
     ){
 
       return;
 
     }
-
-
 
 
 
@@ -267,11 +246,7 @@ export default function ChatPage(){
 
 
 
-
-
     setTexto("");
-
-
 
   }
 
@@ -281,21 +256,17 @@ export default function ChatPage(){
 
 
 
+
   function manejarTecla(
-
     e:React.KeyboardEvent<HTMLInputElement>
-
   ){
 
 
     if(e.key==="Enter"){
 
-
       e.preventDefault();
 
-
       enviar();
-
 
     }
 
@@ -311,28 +282,15 @@ export default function ChatPage(){
   const emojis=[
 
     "😀",
-
     "😂",
-
     "😍",
-
     "❤️",
-
     "👍",
-
     "🔥",
-
     "🎉",
-
     "😎"
 
   ];
-
-
-
-
-
-
 
 
 
@@ -370,23 +328,19 @@ export default function ChatPage(){
 
 
 
+
+
           <button
 
             onClick={()=>{
 
-
               if(eventoId){
 
-
                 router.push(
-
-                  `/evento/${eventoId}`
-
+                  `/evento/${eventoId}?vista=chats`
                 );
 
-
               }
-
 
             }}
 
@@ -403,7 +357,7 @@ export default function ChatPage(){
 
           >
 
-            🏠 Casa
+            ← Volver
 
           </button>
 
@@ -413,7 +367,16 @@ export default function ChatPage(){
 
 
 
-          <div className="text-center">
+          <button
+
+            onClick={()=>setMostrarFoto(true)}
+
+            className="
+              text-center
+            "
+
+          >
+
 
 
             {
@@ -450,11 +413,98 @@ export default function ChatPage(){
 
 
 
-          </div>
+          </button>
+
+
+
+
+
+
+
+
+          <button
+
+            onClick={()=>{
+
+              if(eventoId){
+
+                router.push(
+                  `/evento/${eventoId}?vista=discovery`
+                );
+
+              }
+
+            }}
+
+            className="
+              absolute
+              right-0
+              bg-white
+              text-black
+              px-3
+              py-2
+              rounded-xl
+              font-bold
+            "
+
+          >
+
+            🏠
+
+          </button>
+
+
 
 
 
         </header>
+
+
+
+
+
+
+
+
+
+        {
+          mostrarFoto && (
+
+            <div
+
+              onClick={()=>setMostrarFoto(false)}
+
+              className="
+                fixed
+                inset-0
+                bg-black/90
+                z-50
+                flex
+                items-center
+                justify-center
+                p-4
+              "
+
+            >
+
+              <img
+
+                src={foto}
+
+                className="
+                  max-h-full
+                  max-w-full
+                  rounded-2xl
+                  object-contain
+                "
+
+              />
+
+            </div>
+
+          )
+
+        }
 
 
 
@@ -474,6 +524,7 @@ export default function ChatPage(){
         ">
 
 
+
           {
             mensajes.map((mensaje)=>(
 
@@ -483,6 +534,7 @@ export default function ChatPage(){
                 key={mensaje.id}
 
                 className={`
+
                   bg-white
                   border
                   border-black
@@ -491,13 +543,21 @@ export default function ChatPage(){
                   text-black
                   font-[Arial_Black]
                   max-w-[80%]
+
+
                   ${
-                    mensaje.enviadoPor===user?.uid
+                    mensaje.enviadoPor === user?.uid
+
                     ?
+
                     "ml-auto"
+
                     :
+
                     "mr-auto"
+
                   }
+
                 `}
 
               >
@@ -511,6 +571,7 @@ export default function ChatPage(){
             ))
 
           }
+
 
 
         </section>
@@ -590,12 +651,12 @@ export default function ChatPage(){
 
 
 
+
+
           <button
 
             onClick={()=>setMostrarEmojis(
-
               !mostrarEmojis
-
             )}
 
             className="
@@ -610,6 +671,10 @@ export default function ChatPage(){
             😊
 
           </button>
+
+
+
+
 
 
 
@@ -632,10 +697,12 @@ export default function ChatPage(){
               rounded-xl
               px-4
               py-3
-              font-[Comic_Sans_MS]
             "
 
           />
+
+
+
 
 
 
@@ -658,6 +725,7 @@ export default function ChatPage(){
             ➤
 
           </button>
+
 
 
 

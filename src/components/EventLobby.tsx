@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
 import { getEventUsers } from "@/lib/events";
 
 
@@ -11,8 +13,12 @@ export default function EventLobby({
 }) {
 
 
+  const router = useRouter();
+
+
   const [usuarios,setUsuarios] = useState<any[]>([]);
   const [cargando,setCargando] = useState(true);
+
 
 
 
@@ -100,6 +106,7 @@ export default function EventLobby({
 
 
 
+
   if(cargando){
 
 
@@ -125,6 +132,7 @@ export default function EventLobby({
 
 
 
+
   return(
 
     <div className="mt-8">
@@ -140,6 +148,9 @@ export default function EventLobby({
         👥 Participantes ({usuarios.length})
 
       </h2>
+
+
+
 
 
 
@@ -173,17 +184,27 @@ export default function EventLobby({
               usuarios.map((usuario)=>(
 
 
-                <div
+                <button
 
                   key={usuario.id}
 
+                  onClick={()=>{
+
+                    router.push(
+                      `/perfil/${usuario.id}?evento=${eventoId}`
+                    );
+
+                  }}
+
                   className="
+                    w-full
                     flex
                     items-center
                     gap-4
                     bg-gray-100
                     rounded-xl
                     p-3
+                    text-left
                   "
 
                 >
@@ -236,6 +257,8 @@ export default function EventLobby({
 
 
 
+
+
                   <div>
 
                     <p className="
@@ -248,12 +271,13 @@ export default function EventLobby({
                     </p>
 
 
+
                     <p className="
                       text-sm
                       text-gray-500
                     ">
 
-                      Participante
+                      Ver perfil
 
                     </p>
 
@@ -261,7 +285,9 @@ export default function EventLobby({
                   </div>
 
 
-                </div>
+
+
+                </button>
 
 
               ))

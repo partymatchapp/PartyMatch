@@ -1,22 +1,55 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+
+import {
+  collection,
+  query,
+  where,
+  onSnapshot
+} from "firebase/firestore";
+
+import { db } from "@/lib/firebase";
 
 import { useUser } from "@/context/UserContext";
 
 import { getEvent } from "@/lib/events";
-import { joinEvent, getUserProfile } from "@/lib/users";
+
+import {
+  joinEvent,
+  getUserProfile
+} from "@/lib/users";
 
 import {
   getUnreadNotificationsCount
 } from "@/lib/notifications";
 
-import EventLobby from "@/components/EventLobby";
+
 import Discovery from "@/components/Discovery";
+import EventLobby from "@/components/EventLobby";
 import Notifications from "@/components/Notifications";
 import Matches from "@/components/Matches";
 import Chats from "@/components/Chats";
+import MiPerfil from "@/components/MiPerfil";
+
+
+
+
+
+type Vista =
+  | "discovery"
+  | "participantes"
+  | "notificaciones"
+  | "matches"
+  | "chats"
+  | "perfil";
+
+
+
+
+
+
 
 
 export default function EventoPage(){
@@ -26,56 +59,108 @@ export default function EventoPage(){
 
   const router = useRouter();
 
+  const searchParams = useSearchParams();
+
+
   const id = params.id as string;
 
 
-  const { user, loading } = useUser();
+  const {
+    user,
+    loading
+  } = useUser();
 
 
 
-  const [evento,setEvento] = useState<any>(null);
-
-  const [cargando,setCargando] = useState(true);
-
-  const [error,setError] = useState("");
-
-  const [vista,setVista] = useState<
-    "discovery" |
-    "notificaciones" |
-    "matches" |
-    "chats"
-  >("discovery");
-
-
-  const [contador,setContador] = useState(0);
 
 
 
-  async function cargarContador(){
-
-    if(!user) return;
-
-
-    try{
-
-      const cantidad =
-        await getUnreadNotificationsCount(
-          user.uid
-        );
-
-      setContador(cantidad);
+  const [evento,setEvento] =
+    useState<any>(null);
 
 
-    }catch(error){
+  const [cargando,setCargando] =
+    useState(true);
 
-      console.error(
-        "Error contador:",
-        error
-      );
+
+  const [error,setError] =
+    useState("");
+
+
+
+
+
+  const [vista,setVista] =
+    useState<Vista>(()=>{
+
+
+      const vistaUrl =
+        searchParams.get("vista");
+
+
+
+      if(
+        vistaUrl === "chats" ||
+        vistaUrl === "matches" ||
+        vistaUrl === "notificaciones" ||
+        vistaUrl === "participantes" ||
+        vistaUrl === "discovery" ||
+        vistaUrl === "perfil"
+      ){
+
+        return vistaUrl;
+
+      }
+
+
+      return "discovery";
+
+
+    });
+
+
+
+
+
+  const [notificaciones,setNotificaciones] =
+    useState(0);
+
+
+
+  const [chatsNoLeidos,setChatsNoLeidos] =
+    useState(0);
+
+
+
+
+
+
+
+
+  async function cargarNotificaciones(){
+
+
+    if(!user){
+
+      return;
 
     }
 
+
+    const cantidad =
+      await getUnreadNotificationsCount(
+        user.uid
+      );
+
+
+    setNotificaciones(cantidad);
+
+
   }
+
+
+
+
 
 
 
@@ -100,6 +185,8 @@ export default function EventoPage(){
 
 
 
+
+
         const datos =
           await getEvent(id);
 
@@ -114,7 +201,10 @@ export default function EventoPage(){
         }
 
 
+
         setEvento(datos);
+
+
 
 
 
@@ -143,6 +233,7 @@ export default function EventoPage(){
 
 
 
+
         const perfil =
           await getUserProfile(
             user.uid
@@ -165,33 +256,33 @@ export default function EventoPage(){
 
           return;
 
+
         }
 
 
 
 
 
+
         await joinEvent(
-
           user.uid,
-
           id
-
         );
 
 
 
-        await cargarContador();
+
+
+        await cargarNotificaciones();
+
+
 
 
 
       }catch(error:any){
 
 
-        console.error(
-          "Error evento:",
-          error
-        );
+        console.error(error);
 
 
         setError(
@@ -212,6 +303,8 @@ export default function EventoPage(){
 
 
 
+
+
     iniciar();
 
 
@@ -229,9 +322,96 @@ export default function EventoPage(){
 
 
 
+  useEffect(()=>{
 
-  if(cargando || loading){
 
+    if(!user){
+
+      return;
+
+    }
+
+
+
+
+
+    const chatsQuery = query(
+
+
+      collection(
+        db,
+        "chats"
+      ),
+
+
+      where(
+        "usuarios",
+        "array-contains",
+        user.uid
+      )
+
+
+    );
+
+
+
+
+
+
+
+
+    const cancelar = onSnapshot(
+
+
+      chatsQuery,
+
+
+      snapshot=>{
+
+
+        let total = 0;
+
+
+
+        snapshot.forEach(doc=>{
+
+
+          const data:any =
+            doc.data();
+
+
+
+          total +=
+            data.noLeidos?.[user.uid] || 0;
+
+
+
+        });
+
+
+
+
+        setChatsNoLeidos(total);
+
+
+
+      }
+
+
+    );
+
+
+
+
+
+    return ()=>cancelar();
+
+
+
+  },[user]);  if(
+    cargando ||
+    loading
+  ){
 
     return(
 
@@ -269,7 +449,6 @@ export default function EventoPage(){
         flex
         items-center
         justify-center
-        p-6
       ">
 
         {error}
@@ -279,6 +458,7 @@ export default function EventoPage(){
     );
 
   }
+
 
 
 
@@ -296,27 +476,28 @@ export default function EventoPage(){
 
 
 
+
+
   return(
 
     <main className="
       min-h-screen
       bg-black
-      p-6
+      text-white
+      pb-24
     ">
 
 
-      <div className="
-        max-w-4xl
-        mx-auto
+
+      <header className="
+        p-5
+        text-center
       ">
 
 
         <h1 className="
           text-3xl
           font-bold
-          text-center
-          mb-8
-          text-white
         ">
 
           {evento.nombre} 🎉
@@ -324,129 +505,380 @@ export default function EventoPage(){
         </h1>
 
 
-
-
-        <EventLobby eventoId={id}/>
-
+      </header>
 
 
 
-        <div className="
-          flex
-          justify-center
-          gap-3
-          mt-8
-          mb-8
-          flex-wrap
-        ">
-
-
-          <button
-            onClick={()=>setVista("discovery")}
-            className="
-              bg-blue-600
-              text-white
-              px-5
-              py-3
-              rounded-xl
-              font-bold
-            "
-          >
-
-            🔍 Descubrir
-
-          </button>
 
 
 
-          <button
-            onClick={()=>setVista("notificaciones")}
-            className="
-              bg-black
-              border
-              border-blue-400
-              text-white
-              px-5
-              py-3
-              rounded-xl
-              font-bold
-            "
-          >
 
-            🔔 Notificaciones
+      <section className="
+        max-w-md
+        mx-auto
+        px-4
+      ">
 
-          </button>
-
-
-
-          <button
-            onClick={()=>setVista("matches")}
-            className="
-              bg-black
-              border
-              border-pink-400
-              text-white
-              px-5
-              py-3
-              rounded-xl
-              font-bold
-            "
-          >
-
-            🎉 Matches
-
-          </button>
-
-
-
-          <button
-            onClick={()=>setVista("chats")}
-            className="
-              bg-black
-              border
-              border-green-400
-              text-white
-              px-5
-              py-3
-              rounded-xl
-              font-bold
-            "
-          >
-
-            💬 Chats
-
-          </button>
-
-
-        </div>
 
 
 
 
         {
-          vista === "discovery" ?
+          vista==="discovery" && (
 
-          <Discovery eventoId={id}/> :
+            <Discovery
+              eventoId={id}
+            />
 
-          vista === "notificaciones" ?
-
-          <Notifications/> :
-
-          vista === "matches" ?
-
-          <Matches/> :
-
-          <Chats/>
-
+          )
         }
 
 
 
-      </div>
+
+
+
+
+        {
+          vista==="participantes" && (
+
+            <EventLobby
+              eventoId={id}
+            />
+
+          )
+        }
+
+
+
+
+
+
+
+        {
+          vista==="notificaciones" && (
+
+            <Notifications/>
+
+          )
+        }
+
+
+
+
+
+
+
+        {
+          vista==="matches" && (
+
+            <Matches/>
+
+          )
+        }
+
+
+
+
+
+
+
+        {
+          vista==="chats" && (
+
+            <Chats
+              onUnreadChange={setChatsNoLeidos}
+            />
+
+          )
+        }
+
+
+
+
+
+
+
+        {
+          vista==="perfil" && (
+
+            <MiPerfil/>
+
+          )
+        }
+
+
+
+
+
+
+      </section>
+
+
+
+
+
+
+
+
+
+
+
+      <nav className="
+        fixed
+        bottom-0
+        left-0
+        right-0
+        bg-slate-900
+        border-t
+        border-gray-700
+        p-3
+        z-40
+      ">
+
+
+
+        <div className="
+          max-w-md
+          mx-auto
+          flex
+          justify-around
+          items-center
+        ">
+
+
+
+
+
+          <button
+
+            onClick={()=>setVista("discovery")}
+
+            className="
+              flex
+              flex-col
+              items-center
+              text-sm
+            "
+
+          >
+
+            ❤️
+
+            <span>
+              Descubrir
+            </span>
+
+          </button>
+
+
+
+
+
+
+
+          <button
+
+            onClick={()=>setVista("participantes")}
+
+            className="
+              flex
+              flex-col
+              items-center
+              text-sm
+            "
+
+          >
+
+            👥
+
+            <span>
+              Personas
+            </span>
+
+          </button>
+
+
+
+
+
+
+
+          <button
+
+            onClick={()=>setVista("notificaciones")}
+
+            className="
+              relative
+              flex
+              flex-col
+              items-center
+              text-sm
+            "
+
+          >
+
+            🔔
+
+
+
+            {
+              notificaciones > 0 && (
+
+                <span className="
+                  absolute
+                  -top-2
+                  bg-red-500
+                  rounded-full
+                  px-2
+                  text-xs
+                ">
+
+                  {notificaciones}
+
+                </span>
+
+              )
+
+            }
+
+
+
+            <span>
+              Avisos
+            </span>
+
+
+          </button>
+
+
+
+
+
+
+
+
+          <button
+
+            onClick={()=>setVista("matches")}
+
+            className="
+              flex
+              flex-col
+              items-center
+              text-sm
+            "
+
+          >
+
+            🎉
+
+            <span>
+              Match
+            </span>
+
+          </button>
+
+
+
+
+
+
+
+
+
+          <button
+
+            onClick={()=>setVista("chats")}
+
+            className="
+              relative
+              flex
+              flex-col
+              items-center
+              text-sm
+            "
+
+          >
+
+            💬
+
+
+
+            {
+              chatsNoLeidos > 0 && (
+
+                <span className="
+                  absolute
+                  -top-2
+                  bg-red-500
+                  rounded-full
+                  px-2
+                  text-xs
+                ">
+
+                  {chatsNoLeidos}
+
+                </span>
+
+              )
+
+            }
+
+
+
+            <span>
+              Chat
+            </span>
+
+
+          </button>
+
+
+
+
+
+
+
+
+
+          <button
+
+            onClick={()=>setVista("perfil")}
+
+            className="
+              flex
+              flex-col
+              items-center
+              text-sm
+            "
+
+          >
+
+            👤
+
+            <span>
+              Perfil
+            </span>
+
+          </button>
+
+
+
+
+
+
+
+        </div>
+
+
+      </nav>
+
 
 
     </main>
 
   );
+
 
 }

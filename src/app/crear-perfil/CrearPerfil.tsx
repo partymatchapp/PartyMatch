@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { loginAnonymous } from "@/lib/auth";
+
 import {
   updateUserProfile,
   joinEvent
@@ -29,12 +30,6 @@ export default function CrearPerfil(){
   const eventoId = searchParams.get("evento");
 
 
-  console.log(
-    "🎯 Evento recibido:",
-    eventoId
-  );
-
-
 
   const [nombre,setNombre] = useState("");
 
@@ -44,11 +39,31 @@ export default function CrearPerfil(){
 
   const [busca,setBusca] = useState("");
 
-  const [foto,setFoto] = useState<File|null>(null);
 
-  const [preview,setPreview] = useState("");
 
-  const [guardando,setGuardando] = useState(false);
+  const [foto,setFoto] =
+    useState<File|null>(null);
+
+
+  const [fotosExtra,setFotosExtra] =
+    useState<File[]>([]);
+
+
+
+  const [preview,setPreview] =
+    useState("");
+
+
+
+  const [previewExtras,setPreviewExtras] =
+    useState<string[]>([]);
+
+
+
+  const [guardando,setGuardando] =
+    useState(false);
+
+
 
 
 
@@ -58,16 +73,21 @@ export default function CrearPerfil(){
     e:React.ChangeEvent<HTMLInputElement>
   ){
 
-    const archivo = e.target.files?.[0];
+
+    const archivo =
+      e.target.files?.[0];
+
 
     if(!archivo) return;
 
 
     setFoto(archivo);
 
+
     setPreview(
       URL.createObjectURL(archivo)
     );
+
 
   }
 
@@ -75,7 +95,100 @@ export default function CrearPerfil(){
 
 
 
+
+
+
+  function seleccionarFotosExtra(
+    e:React.ChangeEvent<HTMLInputElement>
+  ){
+
+
+    const archivos =
+      Array.from(
+        e.target.files || []
+      );
+
+
+    const nuevas =
+      archivos.slice(
+        0,
+        3
+      );
+
+
+    setFotosExtra(nuevas);
+
+
+
+    setPreviewExtras(
+
+      nuevas.map((foto)=>
+        URL.createObjectURL(foto)
+      )
+
+    );
+
+
+  }
+
+
+
+
+
+
+
+
+
+  async function subirImagen(
+
+    archivo:File,
+
+    nombre:string,
+
+    uid:string
+
+  ){
+
+
+    const imagenRef = ref(
+
+      storage,
+
+      `usuarios/${uid}/${nombre}`
+
+    );
+
+
+
+    await uploadBytes(
+
+      imagenRef,
+
+      archivo
+
+    );
+
+
+
+    return await getDownloadURL(
+
+      imagenRef
+
+    );
+
+
+  }
+
+
+
+
+
+
+
+
+
   async function crearPerfil(){
+
 
 
     if(
@@ -95,6 +208,8 @@ export default function CrearPerfil(){
 
 
 
+
+
     if(!foto){
 
       alert(
@@ -107,14 +222,20 @@ export default function CrearPerfil(){
 
 
 
+
+
     setGuardando(true);
+
 
 
 
     try{
 
 
-      const user = await loginAnonymous();
+
+      const user =
+        await loginAnonymous();
+
 
 
 
@@ -129,30 +250,58 @@ export default function CrearPerfil(){
 
 
 
-      const imagenRef = ref(
-
-        storage,
-
-        `usuarios/${user.uid}/perfil.jpg`
-
-      );
 
 
 
-      await uploadBytes(
+      const urlPrincipal =
+        await subirImagen(
 
-        imagenRef,
+          foto,
 
-        foto
+          "perfil.jpg",
 
-      );
+          user.uid
 
-
-
-      const urlFoto =
-        await getDownloadURL(
-          imagenRef
         );
+
+
+
+
+
+
+
+      const urlsExtras:string[] = [];
+
+
+
+
+      for(
+        let i = 0;
+        i < fotosExtra.length;
+        i++
+      ){
+
+
+        const url =
+          await subirImagen(
+
+            fotosExtra[i],
+
+            `foto${i+2}.jpg`,
+
+            user.uid
+
+          );
+
+
+        urlsExtras.push(url);
+
+
+      }
+
+
+
+
 
 
 
@@ -164,6 +313,7 @@ export default function CrearPerfil(){
 
         {
 
+
           nombre,
 
           edad,
@@ -172,13 +322,22 @@ export default function CrearPerfil(){
 
           busca,
 
-          foto:urlFoto,
+
+          foto:urlPrincipal,
+
+
+          fotos:urlsExtras,
+
 
           intereses:[]
+
 
         }
 
       );
+
+
+
 
 
 
@@ -196,6 +355,7 @@ export default function CrearPerfil(){
 
 
 
+
       await joinEvent(
 
         user.uid,
@@ -208,18 +368,13 @@ export default function CrearPerfil(){
 
 
 
-      console.log(
-        "🎉 Usuario unido al evento:",
-        eventoId
-      );
-
-
-
-
 
       router.push(
+
         `/evento/${eventoId}`
+
       );
+
 
 
 
@@ -227,8 +382,8 @@ export default function CrearPerfil(){
     }catch(error:any){
 
 
+
       console.error(
-        "❌ ERROR:",
         error
       );
 
@@ -237,6 +392,7 @@ export default function CrearPerfil(){
         error.message ||
         "Error creando perfil"
       );
+
 
 
     }finally{
@@ -249,6 +405,9 @@ export default function CrearPerfil(){
 
 
   }
+
+
+
 
 
 
@@ -277,6 +436,7 @@ export default function CrearPerfil(){
       ">
 
 
+
         <h1 className="
           text-3xl
           font-bold
@@ -289,24 +449,33 @@ export default function CrearPerfil(){
         </h1>
 
 
-        {preview && (
 
-          <img
 
-            src={preview}
 
-            className="
-              w-32
-              h-32
-              rounded-full
-              object-cover
-              mx-auto
-              mt-6
-            "
 
-          />
+        {
+          preview && (
 
-        )}
+            <img
+
+              src={preview}
+
+              className="
+                w-32
+                h-32
+                rounded-full
+                object-cover
+                mx-auto
+                mt-6
+              "
+
+            />
+
+          )
+        }
+
+
+
 
 
 
@@ -321,7 +490,7 @@ export default function CrearPerfil(){
           cursor-pointer
         ">
 
-          📷 Elegir foto
+          📷 Foto principal
 
 
           <input
@@ -336,7 +505,97 @@ export default function CrearPerfil(){
 
           />
 
+
         </label>
+
+
+
+
+
+
+
+
+        <label className="
+          block
+          mt-4
+          text-center
+          bg-purple-600
+          text-white
+          py-3
+          rounded-xl
+          cursor-pointer
+        ">
+
+
+          📸 Agregar hasta 3 fotos más
+
+
+          <input
+
+            type="file"
+
+            accept="image/*"
+
+            multiple
+
+            onChange={seleccionarFotosExtra}
+
+            className="hidden"
+
+          />
+
+
+        </label>
+
+
+
+
+
+
+        {
+          previewExtras.length > 0 && (
+
+            <div className="
+              flex
+              gap-2
+              mt-4
+              justify-center
+            ">
+
+
+              {
+                previewExtras.map((foto,i)=>(
+
+                  <img
+
+                    key={i}
+
+                    src={foto}
+
+                    className="
+                      w-20
+                      h-20
+                      rounded-xl
+                      object-cover
+                    "
+
+                  />
+
+                ))
+
+              }
+
+
+            </div>
+
+          )
+
+        }
+
+
+
+
+
 
 
 
@@ -361,6 +620,8 @@ export default function CrearPerfil(){
 
 
 
+
+
         <input
 
           value={edad}
@@ -381,6 +642,9 @@ export default function CrearPerfil(){
           "
 
         />
+
+
+
 
 
 
@@ -415,6 +679,9 @@ export default function CrearPerfil(){
           </option>
 
         </select>
+
+
+
 
 
 
@@ -456,6 +723,11 @@ export default function CrearPerfil(){
 
 
 
+
+
+
+
+
         <button
 
           onClick={crearPerfil}
@@ -482,13 +754,18 @@ export default function CrearPerfil(){
             "Entrar a la fiesta 🎉"
           }
 
+
         </button>
+
+
 
 
       </div>
 
+
     </main>
 
   );
+
 
 }

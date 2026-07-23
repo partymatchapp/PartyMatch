@@ -20,6 +20,8 @@ export interface UserProfile {
 
   foto?:string;
 
+  fotos?:string[];
+
   genero?:string;
 
   busca?:string;
@@ -64,7 +66,9 @@ export async function createUserProfile(
 
       await setDoc(
 
+
         userRef,
+
 
         {
 
@@ -73,6 +77,8 @@ export async function createUserProfile(
           email:user.email || "",
 
           foto:user.photoURL || "",
+
+          fotos:[],
 
           edad:"",
 
@@ -87,6 +93,7 @@ export async function createUserProfile(
           creadoEn:new Date(),
 
         }
+
 
       );
 
@@ -136,6 +143,8 @@ export async function updateUserProfile(
 
     foto:string;
 
+    fotos?:string[];
+
     genero:string;
 
     busca:string;
@@ -178,24 +187,37 @@ export async function updateUserProfile(
 
 
 
+
+
     await setDoc(
 
+
       userRef,
+
 
       {
 
 
         nombre:data.nombre,
 
+
         edad:data.edad,
+
 
         foto:data.foto,
 
+
+        fotos:data.fotos || [],
+
+
         genero:data.genero,
+
 
         busca:data.busca,
 
+
         intereses:data.intereses,
+
 
 
         perfilCompleto:true,
@@ -206,11 +228,15 @@ export async function updateUserProfile(
 
       },
 
+
       {
+
 
         merge:true
 
+
       }
+
 
     );
 
@@ -348,7 +374,9 @@ export async function joinEvent(
 
     await setDoc(
 
+
       userRef,
+
 
       {
 
@@ -358,11 +386,13 @@ export async function joinEvent(
 
       },
 
+
       {
 
         merge:true
 
       }
+
 
     );
 

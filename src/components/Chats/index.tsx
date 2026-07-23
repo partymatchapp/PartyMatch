@@ -7,9 +7,9 @@ import {
   collection,
   query,
   where,
+  onSnapshot,
   doc,
-  getDoc,
-  onSnapshot
+  getDoc
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -19,6 +19,8 @@ import { useUser } from "@/context/UserContext";
 
 
 type Perfil = {
+
+  id:string;
 
   nombre:string;
 
@@ -30,8 +32,15 @@ type Perfil = {
 
 
 
-export default function Chats(){
+export default function Chats({
 
+  onUnreadChange
+
+}:{
+
+  onUnreadChange:(cantidad:number)=>void;
+
+}){
 
 
   const { user } = useUser();
@@ -39,14 +48,12 @@ export default function Chats(){
   const router = useRouter();
 
 
-
-  const [chats,setChats] = useState<any[]>([]);
-
-  const [cargando,setCargando] = useState(true);
+  const [chats,setChats] =
+    useState<any[]>([]);
 
 
-
-
+  const [cargando,setCargando] =
+    useState(true);
 
 
 
@@ -65,26 +72,17 @@ export default function Chats(){
 
 
 
-
-
-    const matchesQuery = query(
+    const chatsQuery = query(
 
       collection(
-
         db,
-
-        "matches"
-
+        "chats"
       ),
 
       where(
-
         "usuarios",
-
         "array-contains",
-
         user.uid
-
       )
 
     );
@@ -97,15 +95,12 @@ export default function Chats(){
 
     const cancelar = onSnapshot(
 
-      matchesQuery,
+      chatsQuery,
 
       async(snapshot)=>{
 
 
-
         const lista:any[] = [];
-
-
 
 
 
@@ -115,21 +110,34 @@ export default function Chats(){
 
 
 
-          const data:any = item.data();
+          const data:any =
+            item.data();
 
 
 
-          const otroUsuario = data.usuarios.find(
 
-            (id:string)=>id !== user.uid
+          const otroUsuario =
+            data.usuarios.find(
+              (id:string)=>id !== user.uid
+            );
 
-          );
+
+
+
+
+          if(!otroUsuario){
+
+            continue;
+
+          }
 
 
 
 
 
           let perfil:Perfil = {
+
+            id:otroUsuario,
 
             nombre:"Usuario",
 
@@ -141,144 +149,46 @@ export default function Chats(){
 
 
 
-
-
-          if(otroUsuario){
-
-
-
-            const usuarioSnap = await getDoc(
+          const usuarioSnap =
+            await getDoc(
 
               doc(
-
                 db,
-
                 "usuarios",
-
                 otroUsuario
-
               )
 
             );
 
 
 
-            if(usuarioSnap.exists()){
+
+
+          if(usuarioSnap.exists()){
+
+
+            const datos =
+              usuarioSnap.data();
 
 
 
-              const datos = usuarioSnap.data();
+            perfil = {
+
+              id:otroUsuario,
+
+              nombre:
+                datos.nombre ||
+                "Usuario",
 
 
+              foto:
+                datos.foto ||
+                ""
 
-              perfil = {
-
-                nombre:datos.nombre || "Usuario",
-
-                foto:datos.foto || ""
-
-              };
-
-
-            }
+            };
 
 
           }
-
-
-
-
-
-
-
-
-          const chatSnap = await getDoc(
-
-            doc(
-
-              db,
-
-              "chats",
-
-              item.id
-
-            )
-
-          );
-
-
-
-
-
-
-
-
-          let ultimoMensaje = "";
-
-          let hora = "";
-
-          let noLeidos = 0;
-
-
-
-
-
-
-
-
-
-          if(chatSnap.exists()){
-
-
-
-            const chat:any = chatSnap.data();
-
-
-
-            ultimoMensaje = chat.ultimoMensaje || "";
-
-
-
-
-
-            noLeidos =
-
-              chat.noLeidos?.[user.uid] || 0;
-
-
-
-
-
-
-
-            if(chat.ultimaFecha?.toDate){
-
-
-
-              hora = chat.ultimaFecha
-
-                .toDate()
-
-                .toLocaleTimeString(
-
-                  [],
-
-                  {
-
-                    hour:"2-digit",
-
-                    minute:"2-digit"
-
-                  }
-
-                );
-
-
-            }
-
-
-          }
-
 
 
 
@@ -288,15 +198,46 @@ export default function Chats(){
 
           lista.push({
 
+
             id:item.id,
+
 
             perfil,
 
-            ultimoMensaje,
 
-            hora,
+            ultimoMensaje:
+              data.ultimoMensaje ||
+              "",
 
-            noLeidos
+
+
+            hora:
+              data.ultimaFecha?.toDate
+
+              ?
+
+              data.ultimaFecha
+              .toDate()
+              .toLocaleTimeString(
+                [],
+                {
+                  hour:"2-digit",
+                  minute:"2-digit"
+                }
+              )
+
+              :
+
+              "",
+
+
+
+
+
+            noLeidos:
+              data.noLeidos?.[user.uid] || 0
+
+
 
           });
 
@@ -311,6 +252,32 @@ export default function Chats(){
 
 
         setChats(lista);
+
+
+
+
+
+        const totalNoLeidos = lista.reduce(
+
+          (total,chat)=>{
+
+            return total + chat.noLeidos;
+
+          },
+
+          0
+
+        );
+
+
+
+
+
+        onUnreadChange(totalNoLeidos);
+
+
+
+
 
         setCargando(false);
 
@@ -330,7 +297,7 @@ export default function Chats(){
 
 
 
-  },[user]);
+  },[user,onUnreadChange]);
 
 
 
@@ -356,7 +323,6 @@ export default function Chats(){
       </div>
 
     );
-
 
   }
 
@@ -398,8 +364,10 @@ export default function Chats(){
 
 
       {
-        chats.length === 0 ? (
+        chats.length === 0 ?
 
+
+        (
 
           <p className="
             text-gray-400
@@ -411,161 +379,204 @@ export default function Chats(){
           </p>
 
 
-        ) : (
+        )
+
+        :
 
 
-          <div className="
-            space-y-4
-          ">
-
-
-
-            {
-              chats.map((chat)=>(
+        (
 
 
 
-                <button
+        <div className="
+          space-y-4
+        ">
 
-                  key={chat.id}
 
-                  onClick={()=>router.push(`/chat/${chat.id}`)}
 
-                  className="
-                    w-full
-                    bg-slate-900
-                    border
-                    border-green-400/30
-                    rounded-2xl
-                    p-4
-                    flex
-                    items-center
-                    gap-4
-                    text-left
-                  "
+        {
+          chats.map((chat)=>(
 
-                >
 
+
+            <div
+
+              key={chat.id}
+
+              className="
+                bg-slate-900
+                border
+                border-green-400/30
+                rounded-2xl
+                p-4
+                flex
+                items-center
+                gap-4
+              "
+
+            >
+
+
+
+
+
+
+              <button
+
+                onClick={()=>router.push(
+                  `/perfil/${chat.perfil.id}`
+                )}
+
+              >
+
+
+                {
+                  chat.perfil.foto && (
+
+                    <img
+
+                      src={chat.perfil.foto}
+
+                      className="
+                        w-16
+                        h-16
+                        rounded-full
+                        object-cover
+                      "
+
+                    />
+
+                  )
+                }
+
+
+              </button>
+
+
+
+
+
+
+
+
+              <button
+
+                onClick={()=>router.push(
+                  `/chat/${chat.id}`
+                )}
+
+                className="
+                  flex-1
+                  text-left
+                "
+
+              >
+
+
+
+                <h2 className="
+                  text-xl
+                  font-bold
+                ">
+
+
+                  {chat.perfil.nombre}
 
 
 
                   {
-                    chat.perfil.foto && (
+                    chat.noLeidos > 0 && (
 
-                      <img
 
-                        src={chat.perfil.foto}
+                      <span className="
+                        ml-2
+                        bg-red-500
+                        text-white
+                        rounded-full
+                        px-2
+                        text-sm
+                      ">
 
-                        className="
-                          w-16
-                          h-16
-                          rounded-full
-                          object-cover
-                        "
 
-                      />
+                        {chat.noLeidos}
+
+
+                      </span>
+
 
                     )
                   }
 
 
 
-
-
-
-
-                  <div className="
-                    flex-1
-                  ">
-
-
-                    <h2 className="
-                      text-xl
-                      font-bold
-                    ">
-
-                      {chat.perfil.nombre}
-
-
-                      {
-                        chat.noLeidos > 0 && (
-
-                          <span className="
-                            ml-2
-                            bg-red-500
-                            text-white
-                            rounded-full
-                            px-2
-                            text-sm
-                          ">
-
-                            {chat.noLeidos}
-
-                          </span>
-
-                        )
-                      }
-
-
-                    </h2>
-
-
-
-
-
-                    <p className="
-                      text-gray-300
-                      truncate
-                    ">
-
-                      {
-                        chat.ultimoMensaje ||
-
-                        "Todavía no hay mensajes"
-
-                      }
-
-                    </p>
-
-
-
-                  </div>
+                </h2>
 
 
 
 
 
 
-                  <span className="
-                    text-xs
-                    text-gray-400
-                  ">
-
-                    {chat.hora}
-
-                  </span>
+                <p className="
+                  text-gray-300
+                  truncate
+                ">
 
 
+                  {
+                    chat.ultimoMensaje ||
+
+                    "Todavía no hay mensajes"
+
+                  }
 
 
-
-
-                </button>
-
-
-              ))
-
-            }
+                </p>
 
 
 
-          </div>
+
+              </button>
+
+
+
+
+
+
+
+              <span className="
+                text-xs
+                text-gray-400
+              ">
+
+
+                {chat.hora}
+
+
+              </span>
+
+
+
+
+
+
+
+            </div>
+
+
+
+          ))
+
+        }
+
+
+
+        </div>
+
 
 
         )
 
       }
-
 
 
 
