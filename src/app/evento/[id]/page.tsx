@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 import { useUser } from "@/context/UserContext";
 
 import { getEvent } from "@/lib/events";
-import { joinEvent } from "@/lib/users";
+import { joinEvent, getUserProfile } from "@/lib/users";
 
 import {
   getUnreadNotificationsCount
@@ -19,11 +19,12 @@ import Matches from "@/components/Matches";
 import Chats from "@/components/Chats";
 
 
-
 export default function EventoPage(){
 
 
   const params = useParams();
+
+  const router = useRouter();
 
   const id = params.id as string;
 
@@ -37,8 +38,6 @@ export default function EventoPage(){
   const [cargando,setCargando] = useState(true);
 
   const [error,setError] = useState("");
-
-
 
   const [vista,setVista] = useState<
     "discovery" |
@@ -64,10 +63,10 @@ export default function EventoPage(){
 
     try{
 
-
-      const cantidad = await getUnreadNotificationsCount(
-        user.uid
-      );
+      const cantidad =
+        await getUnreadNotificationsCount(
+          user.uid
+        );
 
 
       setContador(cantidad);
@@ -75,12 +74,10 @@ export default function EventoPage(){
 
     }catch(error){
 
-
       console.error(
         "Error contador:",
         error
       );
-
 
     }
 
@@ -93,11 +90,10 @@ export default function EventoPage(){
 
 
 
-
   useEffect(()=>{
 
 
-    async function cargarEvento(){
+    async function iniciar(){
 
 
       try{
@@ -113,21 +109,17 @@ export default function EventoPage(){
 
 
 
-        console.log(
-          "Buscando evento:",
-          id
-        );
-
-
-
         const datos = await getEvent(id);
 
 
 
-        console.log(
-          "Evento encontrado:",
-          datos
-        );
+        if(!datos){
+
+          throw new Error(
+            "Evento no encontrado"
+          );
+
+        }
 
 
 
@@ -135,18 +127,60 @@ export default function EventoPage(){
 
 
 
+
+        if(user){
+
+
+
+          const perfil =
+            await getUserProfile(
+              user.uid
+            );
+
+
+
+          if(
+            !perfil ||
+            !perfil.perfilCompleto
+          ){
+
+
+            router.push(
+              `/crear-perfil?evento=${id}`
+            );
+
+
+            return;
+
+          }
+
+
+
+
+          await joinEvent(
+            user.uid,
+            id
+          );
+
+
+
+          await cargarContador();
+
+
+        }
+
+
+
       }catch(error:any){
 
 
         console.error(
-          "Error cargando evento:",
           error
         );
 
 
         setError(
-          error.message || 
-          "Error cargando evento"
+          error.message
         );
 
 
@@ -163,69 +197,10 @@ export default function EventoPage(){
 
 
 
-    cargarEvento();
+    iniciar();
 
 
-  },[id]);
-
-
-
-
-
-
-
-
-
-  useEffect(()=>{
-
-
-    async function unirUsuario(){
-
-
-
-      if(user && id){
-
-
-        try{
-
-
-          await joinEvent(
-
-            user.uid,
-
-            id
-
-          );
-
-
-          await cargarContador();
-
-
-
-        }catch(error){
-
-
-          console.error(
-            "Error uniendo usuario:",
-            error
-          );
-
-
-        }
-
-
-      }
-
-
-    }
-
-
-
-    unirUsuario();
-
-
-
-  },[user,id]);
+  },[id,user]);
 
 
 
@@ -255,8 +230,8 @@ export default function EventoPage(){
 
     );
 
-
   }
+
 
 
 
@@ -273,64 +248,16 @@ export default function EventoPage(){
         bg-black
         text-white
         flex
-        flex-col
         items-center
         justify-center
         p-6
-        text-center
       ">
 
-        <h1 className="
-          text-2xl
-          font-bold
-          mb-4
-        ">
-
-          Error cargando evento
-
-        </h1>
-
-
-        <p className="text-gray-400">
-
-          {error}
-
-        </p>
-
+        {error}
 
       </div>
 
     );
-
-
-  }
-
-
-
-
-
-
-
-  if(!evento){
-
-
-    return(
-
-      <div className="
-        min-h-screen
-        bg-black
-        text-white
-        flex
-        items-center
-        justify-center
-      ">
-
-        Evento no encontrado
-
-      </div>
-
-    );
-
 
   }
 
@@ -342,7 +269,6 @@ export default function EventoPage(){
 
   return(
 
-
     <main className="
       min-h-screen
       bg-black
@@ -350,12 +276,10 @@ export default function EventoPage(){
     ">
 
 
-
       <div className="
         max-w-4xl
         mx-auto
       ">
-
 
 
         <h1 className="
@@ -373,9 +297,7 @@ export default function EventoPage(){
 
 
 
-
         <EventLobby eventoId={id}/>
-
 
 
 
@@ -390,7 +312,6 @@ export default function EventoPage(){
         ">
 
 
-
           <button
             onClick={()=>setVista("discovery")}
             className="
@@ -402,11 +323,8 @@ export default function EventoPage(){
               font-bold
             "
           >
-
             🔍 Descubrir
-
           </button>
-
 
 
 
@@ -427,26 +345,19 @@ export default function EventoPage(){
             🔔 Notificaciones
 
             {
-              contador > 0 && (
-
-                <span className="
-                  ml-2
-                  bg-red-500
-                  px-2
-                  py-1
-                  rounded-full
-                ">
-
-                  {contador}
-
-                </span>
-
-              )
+              contador > 0 &&
+              <span className="
+                ml-2
+                bg-red-500
+                px-2
+                py-1
+                rounded-full
+              ">
+                {contador}
+              </span>
             }
 
           </button>
-
-
 
 
 
@@ -470,8 +381,6 @@ export default function EventoPage(){
 
 
 
-
-
           <button
             onClick={()=>setVista("chats")}
             className="
@@ -491,7 +400,6 @@ export default function EventoPage(){
           </button>
 
 
-
         </div>
 
 
@@ -499,23 +407,20 @@ export default function EventoPage(){
 
 
         {
-          vista === "discovery" ? (
+          vista === "discovery" ?
 
-            <Discovery eventoId={id}/>
+          <Discovery eventoId={id}/> :
 
-          ) : vista === "notificaciones" ? (
+          vista === "notificaciones" ?
 
-            <Notifications/>
+          <Notifications/> :
 
-          ) : vista === "matches" ? (
+          vista === "matches" ?
 
-            <Matches/>
+          <Matches/> :
 
-          ) : (
+          <Chats/>
 
-            <Chats/>
-
-          )
         }
 
 
@@ -525,8 +430,6 @@ export default function EventoPage(){
 
     </main>
 
-
   );
-
 
 }
