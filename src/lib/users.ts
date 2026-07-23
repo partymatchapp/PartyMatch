@@ -1,110 +1,464 @@
 import { 
   doc, 
   setDoc, 
-  getDoc, 
-  updateDoc 
+  getDoc 
 } from "firebase/firestore";
 
 import { db } from "./firebase";
 
 
 
-export async function createUserProfile(user: any) {
+export interface UserProfile {
 
-  const userRef = doc(db, "usuarios", user.uid);
+  id: string;
 
-  const userSnapshot = await getDoc(userRef);
+  nombre?: string;
+
+  edad?: string;
+
+  email?: string;
+
+  foto?: string;
+
+  genero?: string;
+
+  busca?: string;
+
+  intereses?: string[];
+
+  eventoId?: string;
+
+  perfilCompleto?: boolean;
+
+}
 
 
-  if (!userSnapshot.exists()) {
 
-    await setDoc(userRef, {
 
-      nombre: user.displayName,
-      email: user.email,
-      foto: user.photoURL,
-      creadoEn: new Date(),
-      perfilCompleto: false,
 
-    });
+export async function createUserProfile(
+  user:any
+) {
 
-    console.log("✅ Usuario creado en Firestore");
 
-  } else {
+  try {
 
-    console.log("👤 Usuario ya existe");
+
+    const userRef = doc(
+
+      db,
+
+      "usuarios",
+
+      user.uid
+
+    );
+
+
+
+    const userSnapshot = await getDoc(
+      userRef
+    );
+
+
+
+    if(!userSnapshot.exists()) {
+
+
+      await setDoc(
+
+        userRef,
+
+        {
+
+
+          nombre: user.displayName || "",
+
+
+          email: user.email || "",
+
+
+          foto: user.photoURL || "",
+
+
+          edad: "",
+
+
+          genero: "",
+
+
+          busca: "",
+
+
+          intereses: [],
+
+
+          creadoEn: new Date(),
+
+
+          perfilCompleto:false,
+
+
+        }
+
+      );
+
+
+
+      console.log(
+        "✅ Usuario creado"
+      );
+
+
+    } else {
+
+
+      console.log(
+        "ℹ️ Usuario ya existe"
+      );
+
+
+    }
+
+
+
+  } catch(error:any){
+
+
+    console.error(
+
+      "❌ Error creando usuario:",
+
+      error
+
+    );
+
+
+    throw error;
+
 
   }
 
+
 }
+
+
+
+
+
 
 
 
 
 export async function updateUserProfile(
-  uid: string,
-  data: {
-    genero: string;
+
+  uid:string,
+
+  data:{
+
+    nombre:string;
+
+    edad:string;
+
+    foto:string;
+
+    genero:string;
+
+    busca:string;
+
+    intereses:string[];
+
   }
-) {
 
-  const userRef = doc(db, "usuarios", uid);
-
-
-  await updateDoc(userRef, {
-
-    genero: data.genero,
-    perfilCompleto: true,
-    actualizadoEn: new Date(),
-
-  });
+){
 
 
-  console.log("✅ Perfil actualizado");
+
+  try {
+
+
+
+    console.log(
+
+      "⏳ Guardando perfil:",
+
+      uid
+
+    );
+
+
+
+
+    const userRef = doc(
+
+      db,
+
+      "usuarios",
+
+      uid
+
+    );
+
+
+
+
+    await setDoc(
+
+      userRef,
+
+      {
+
+
+        nombre:data.nombre,
+
+
+        edad:data.edad,
+
+
+        foto:data.foto,
+
+
+        genero:data.genero,
+
+
+        busca:data.busca,
+
+
+        intereses:data.intereses,
+
+
+        perfilCompleto:true,
+
+
+        actualizadoEn:new Date(),
+
+
+
+      },
+
+      {
+
+        merge:true
+
+      }
+
+
+    );
+
+
+
+
+    console.log(
+
+      "✅ Perfil actualizado"
+
+    );
+
+
+
+
+  }catch(error:any){
+
+
+
+    console.error(
+
+      "❌ Error actualizando perfil:",
+
+      error
+
+    );
+
+
+
+    throw error;
+
+
+  }
+
 
 }
 
 
 
 
-export async function getUserProfile(uid: string) {
-
-  const userRef = doc(db, "usuarios", uid);
-
-  const userSnapshot = await getDoc(userRef);
 
 
-  if (userSnapshot.exists()) {
 
-    return userSnapshot.data();
+
+
+export async function getUserProfile(
+
+  uid:string
+
+):Promise<UserProfile | null>{
+
+
+
+  try {
+
+
+
+    const userRef = doc(
+
+      db,
+
+      "usuarios",
+
+      uid
+
+    );
+
+
+
+
+    const userSnapshot = await getDoc(
+
+      userRef
+
+    );
+
+
+
+
+    if(userSnapshot.exists()){
+
+
+      return {
+
+
+        id:userSnapshot.id,
+
+
+        ...userSnapshot.data()
+
+
+      } as UserProfile;
+
+
+
+    }
+
+
+
+
+    return null;
+
+
+
+
+  }catch(error){
+
+
+
+    console.error(
+
+      "❌ Error obteniendo perfil:",
+
+      error
+
+    );
+
+
+    return null;
+
 
   }
 
 
-  return null;
-
 }
+
+
+
+
 
 
 
 
 
 export async function joinEvent(
-  uid: string,
-  eventoId: string
-) {
 
-  const userRef = doc(db, "usuarios", uid);
+  uid:string,
 
+  eventoId:string
 
-  await updateDoc(userRef, {
-
-    eventoId: eventoId,
-    unidoEn: new Date(),
-
-  });
+){
 
 
-  console.log("🎉 Usuario unido al evento:", eventoId);
+
+  try {
+
+
+
+    const userRef = doc(
+
+      db,
+
+      "usuarios",
+
+      uid
+
+    );
+
+
+
+
+    await setDoc(
+
+      userRef,
+
+      {
+
+
+        eventoId,
+
+
+        unidoEn:new Date()
+
+
+
+      },
+
+      {
+
+        merge:true
+
+      }
+
+
+    );
+
+
+
+
+    console.log(
+
+      "🎉 Usuario unido:",
+
+      eventoId
+
+    );
+
+
+
+
+  }catch(error){
+
+
+
+    console.error(
+
+      "❌ Error uniéndose al evento:",
+
+      error
+
+    );
+
+
+    throw error;
+
+
+  }
+
 
 }
