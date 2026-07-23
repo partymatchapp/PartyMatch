@@ -37,13 +37,17 @@ export default function EventoAdminPage(){
 
 
 
-  const [evento,setEvento] = useState<any>(null);
+  const [evento,setEvento] =
+    useState<any>(null);
+
 
   const [usuarios,setUsuarios] =
     useState<Usuario[]>([]);
 
+
   const [cantidadMatches,setCantidadMatches] =
     useState(0);
+
 
   const [cargando,setCargando] =
     useState(true);
@@ -76,9 +80,11 @@ export default function EventoAdminPage(){
       setEvento(datosEvento);
 
 
+
       setUsuarios(
         participantes as Usuario[]
       );
+
 
 
       setCantidadMatches(
@@ -106,8 +112,6 @@ export default function EventoAdminPage(){
 
 
   }
-
-
 
 
 
@@ -183,7 +187,33 @@ export default function EventoAdminPage(){
           justify-between
           items-center
           mb-8
+          gap-4
         ">
+
+
+
+          <button
+
+            onClick={()=>
+              router.push("/admin")
+            }
+
+            className="
+              bg-slate-900
+              hover:bg-slate-700
+              text-white
+              px-5
+              py-3
+              rounded-xl
+              font-bold
+            "
+
+          >
+
+            ⬅️ Volver
+
+          </button>
+
 
 
 
@@ -211,11 +241,7 @@ export default function EventoAdminPage(){
 
 
           </div>
-
-
-
-
-          <button
+                    <button
 
             onClick={()=> 
               router.push(
@@ -359,6 +385,8 @@ export default function EventoAdminPage(){
 
 
 
+
+
                       <div>
 
 
@@ -381,6 +409,7 @@ export default function EventoAdminPage(){
 
 
 
+
                         {
                           usuario.edad && (
 
@@ -392,6 +421,8 @@ export default function EventoAdminPage(){
 
                           )
                         }
+
+
 
 
 
