@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { loginAnonymous } from "@/lib/auth";
 import { updateUserProfile } from "@/lib/users";
@@ -20,16 +20,27 @@ export default function CrearPerfilPage() {
 
   const router = useRouter();
 
+  const searchParams = useSearchParams();
 
-  const [nombre, setNombre] = useState("");
-  const [edad, setEdad] = useState("");
-  const [genero, setGenero] = useState("");
-  const [busca, setBusca] = useState("");
+  const eventoId = searchParams.get("evento");
 
-  const [foto, setFoto] = useState<File | null>(null);
-  const [preview, setPreview] = useState("");
 
-  const [guardando, setGuardando] = useState(false);
+
+  const [nombre,setNombre] = useState("");
+
+  const [edad,setEdad] = useState("");
+
+  const [genero,setGenero] = useState("");
+
+  const [busca,setBusca] = useState("");
+
+  const [foto,setFoto] = useState<File | null>(null);
+
+  const [preview,setPreview] = useState("");
+
+  const [guardando,setGuardando] = useState(false);
+
+
 
 
 
@@ -37,7 +48,9 @@ export default function CrearPerfilPage() {
     e: React.ChangeEvent<HTMLInputElement>
   ){
 
+
     const archivo = e.target.files?.[0];
+
 
     if(!archivo) return;
 
@@ -57,7 +70,10 @@ export default function CrearPerfilPage() {
 
 
 
+
+
   async function crearPerfil(){
+
 
 
     if(
@@ -69,6 +85,19 @@ export default function CrearPerfilPage() {
 
       alert(
         "Completá todos los datos"
+      );
+
+      return;
+
+    }
+
+
+
+
+    if(!foto){
+
+      alert(
+        "La foto de perfil es obligatoria"
       );
 
       return;
@@ -96,11 +125,9 @@ export default function CrearPerfilPage() {
 
       if(!user){
 
-
         throw new Error(
           "No se pudo crear usuario"
         );
-
 
       }
 
@@ -115,82 +142,48 @@ export default function CrearPerfilPage() {
 
 
 
-      let urlFoto = "";
+      console.log(
+        "⏳ Subiendo foto..."
+      );
 
 
 
+      const imagenRef = ref(
 
+        storage,
 
-      if(foto){
+        `usuarios/${user.uid}/perfil.jpg`
 
-
-        try{
-
-
-          console.log(
-            "⏳ Subiendo foto..."
-          );
+      );
 
 
 
-          const imagenRef = ref(
+      await uploadBytes(
 
-            storage,
+        imagenRef,
 
-            `usuarios/${user.uid}/perfil.jpg`
+        foto
 
-          );
-
-
-
-          await uploadBytes(
-
-            imagenRef,
-
-            foto
-
-          );
+      );
 
 
 
-          urlFoto = await getDownloadURL(
+      const urlFoto = await getDownloadURL(
 
-            imagenRef
+        imagenRef
 
-          );
-
-
-
-          console.log(
-            "✅ Foto subida:",
-            urlFoto
-          );
-
-
-
-        }catch(error){
-
-
-          console.error(
-            "⚠️ Error foto, continuo sin foto:",
-            error
-          );
-
-
-        }
-
-
-      }
-
-
-
-
+      );
 
 
 
       console.log(
-        "⏳ Guardando datos..."
+        "✅ Foto subida:",
+        urlFoto
       );
+
+
+
+
 
 
 
@@ -218,15 +211,38 @@ export default function CrearPerfilPage() {
 
 
 
+
+
       console.log(
-        "✅ Perfil terminado"
+        "✅ Perfil creado"
       );
 
 
 
-      router.push(
-        `/perfil/${user.uid}`
-      );
+
+
+
+      if(eventoId){
+
+
+        router.push(
+
+          `/evento/${eventoId}`
+
+        );
+
+
+      }else{
+
+
+        router.push(
+
+          `/perfil/${user.uid}`
+
+        );
+
+
+      }
 
 
 
@@ -236,15 +252,18 @@ export default function CrearPerfilPage() {
 
 
       console.error(
-        "❌ Error:",
+        "❌ Error creando perfil:",
         error
       );
 
 
 
       alert(
-        error.message || 
+
+        error.message ||
+
         "Error creando perfil"
+
       );
 
 
@@ -259,6 +278,8 @@ export default function CrearPerfilPage() {
 
 
   }
+
+
 
 
 
@@ -293,19 +314,10 @@ export default function CrearPerfilPage() {
           text-black
           text-center
         ">
+
           Crear perfil 🎉
+
         </h1>
-
-
-        <p className="
-          text-gray-500
-          text-center
-          mt-2
-        ">
-          Solo necesitamos unos datos.
-        </p>
-
-
 
 
 
@@ -334,7 +346,6 @@ export default function CrearPerfilPage() {
 
 
 
-
         <label className="
           block
           mt-6
@@ -346,7 +357,7 @@ export default function CrearPerfilPage() {
           cursor-pointer
         ">
 
-          📷 Elegir foto
+          📷 Elegir foto obligatoria
 
 
           <input
@@ -363,7 +374,6 @@ export default function CrearPerfilPage() {
 
 
         </label>
-
 
 
 
@@ -453,6 +463,7 @@ export default function CrearPerfilPage() {
 
 
 
+
         <select
 
           value={busca}
@@ -487,7 +498,9 @@ export default function CrearPerfilPage() {
             Todos
           </option>
 
+
         </select>
+
 
 
 
@@ -515,13 +528,14 @@ export default function CrearPerfilPage() {
 
           {
             guardando
-            ? "Creando..."
-            : "Entrar a la fiesta 🎉"
+            ?
+            "Creando..."
+            :
+            "Entrar a la fiesta 🎉"
           }
 
 
         </button>
-
 
 
       </div>
@@ -530,5 +544,6 @@ export default function CrearPerfilPage() {
     </main>
 
   );
+
 
 }

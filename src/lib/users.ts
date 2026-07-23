@@ -10,25 +10,25 @@ import { db } from "./firebase";
 
 export interface UserProfile {
 
-  id: string;
+  id:string;
 
-  nombre?: string;
+  nombre?:string;
 
-  edad?: string;
+  edad?:string;
 
-  email?: string;
+  email?:string;
 
-  foto?: string;
+  foto?:string;
 
-  genero?: string;
+  genero?:string;
 
-  busca?: string;
+  busca?:string;
 
-  intereses?: string[];
+  intereses?:string[];
 
-  eventoId?: string;
+  eventoId?:string;
 
-  perfilCompleto?: boolean;
+  perfilCompleto?:boolean;
 
 }
 
@@ -36,33 +36,30 @@ export interface UserProfile {
 
 
 
+
+
 export async function createUserProfile(
   user:any
-) {
+){
 
 
-  try {
+  try{
 
 
     const userRef = doc(
-
       db,
-
       "usuarios",
-
       user.uid
-
     );
 
 
-
-    const userSnapshot = await getDoc(
+    const snapshot = await getDoc(
       userRef
     );
 
 
 
-    if(!userSnapshot.exists()) {
+    if(!snapshot.exists()){
 
 
       await setDoc(
@@ -71,38 +68,27 @@ export async function createUserProfile(
 
         {
 
+          nombre:user.displayName || "",
 
-          nombre: user.displayName || "",
+          email:user.email || "",
 
+          foto:user.photoURL || "",
 
-          email: user.email || "",
+          edad:"",
 
+          genero:"",
 
-          foto: user.photoURL || "",
+          busca:"",
 
-
-          edad: "",
-
-
-          genero: "",
-
-
-          busca: "",
-
-
-          intereses: [],
-
-
-          creadoEn: new Date(),
-
+          intereses:[],
 
           perfilCompleto:false,
 
+          creadoEn:new Date(),
 
         }
 
       );
-
 
 
       console.log(
@@ -110,27 +96,15 @@ export async function createUserProfile(
       );
 
 
-    } else {
-
-
-      console.log(
-        "ℹ️ Usuario ya existe"
-      );
-
-
     }
 
 
-
-  } catch(error:any){
+  }catch(error:any){
 
 
     console.error(
-
       "❌ Error creando usuario:",
-
       error
-
     );
 
 
@@ -173,18 +147,19 @@ export async function updateUserProfile(
 ){
 
 
-
-  try {
-
+  try{
 
 
-    console.log(
+    if(!data.foto){
 
-      "⏳ Guardando perfil:",
 
-      uid
+      throw new Error(
+        "La foto de perfil es obligatoria"
+      );
 
-    );
+
+    }
+
 
 
 
@@ -202,6 +177,7 @@ export async function updateUserProfile(
 
 
 
+
     await setDoc(
 
       userRef,
@@ -211,18 +187,13 @@ export async function updateUserProfile(
 
         nombre:data.nombre,
 
-
         edad:data.edad,
-
 
         foto:data.foto,
 
-
         genero:data.genero,
 
-
         busca:data.busca,
-
 
         intereses:data.intereses,
 
@@ -233,7 +204,6 @@ export async function updateUserProfile(
         actualizadoEn:new Date(),
 
 
-
       },
 
       {
@@ -242,33 +212,23 @@ export async function updateUserProfile(
 
       }
 
-
     );
-
 
 
 
     console.log(
-
       "✅ Perfil actualizado"
-
     );
-
 
 
 
   }catch(error:any){
 
 
-
     console.error(
-
       "❌ Error actualizando perfil:",
-
       error
-
     );
-
 
 
     throw error;
@@ -291,12 +251,10 @@ export async function getUserProfile(
 
   uid:string
 
-):Promise<UserProfile | null>{
+):Promise<UserProfile|null>{
 
 
-
-  try {
-
+  try{
 
 
     const userRef = doc(
@@ -310,35 +268,28 @@ export async function getUserProfile(
     );
 
 
-
-
-    const userSnapshot = await getDoc(
-
+    const snapshot = await getDoc(
       userRef
-
     );
 
 
 
-
-    if(userSnapshot.exists()){
+    if(snapshot.exists()){
 
 
       return {
 
 
-        id:userSnapshot.id,
+        id:snapshot.id,
 
 
-        ...userSnapshot.data()
+        ...snapshot.data()
 
 
       } as UserProfile;
 
 
-
     }
-
 
 
 
@@ -346,17 +297,12 @@ export async function getUserProfile(
 
 
 
-
   }catch(error){
 
 
-
     console.error(
-
       "❌ Error obteniendo perfil:",
-
       error
-
     );
 
 
@@ -385,9 +331,7 @@ export async function joinEvent(
 ){
 
 
-
-  try {
-
+  try{
 
 
     const userRef = doc(
@@ -402,20 +346,15 @@ export async function joinEvent(
 
 
 
-
     await setDoc(
 
       userRef,
 
       {
 
-
         eventoId,
 
-
         unidoEn:new Date()
-
-
 
       },
 
@@ -425,33 +364,23 @@ export async function joinEvent(
 
       }
 
-
     );
-
 
 
 
     console.log(
-
       "🎉 Usuario unido:",
-
       eventoId
-
     );
-
 
 
 
   }catch(error){
 
 
-
     console.error(
-
       "❌ Error uniéndose al evento:",
-
       error
-
     );
 
 
