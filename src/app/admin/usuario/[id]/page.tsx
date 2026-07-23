@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -15,7 +15,9 @@ type Usuario = {
   busca?: string;
   intereses?: string[];
   email?: string;
+  eventoId?: string;
 };
+
 
 
 
@@ -23,6 +25,9 @@ export default function PerfilUsuarioPage(){
 
 
   const params = useParams();
+
+  const router = useRouter();
+
 
   const id = params.id as string;
 
@@ -34,6 +39,7 @@ export default function PerfilUsuarioPage(){
 
   const [cargando,setCargando] =
     useState(true);
+
 
 
 
@@ -53,8 +59,10 @@ export default function PerfilUsuarioPage(){
         );
 
 
+
       const resultado =
         await getDoc(referencia);
+
 
 
 
@@ -94,6 +102,8 @@ export default function PerfilUsuarioPage(){
 
 
 
+
+
   useEffect(()=>{
 
 
@@ -105,6 +115,8 @@ export default function PerfilUsuarioPage(){
 
 
   },[id]);
+
+
 
 
 
@@ -138,6 +150,9 @@ export default function PerfilUsuarioPage(){
 
 
 
+
+
+
   if(!usuario){
 
 
@@ -164,6 +179,9 @@ export default function PerfilUsuarioPage(){
 
 
 
+
+
+
   return (
 
 
@@ -174,201 +192,266 @@ export default function PerfilUsuarioPage(){
     ">
 
 
+
       <div className="
         max-w-md
         mx-auto
-        bg-white
-        rounded-3xl
-        shadow-lg
-        p-8
-        text-center
       ">
 
 
 
-        {
-          usuario.foto ? (
+        <button
 
-            <img
+          onClick={()=>{
 
-              src={usuario.foto}
+            if(usuario.eventoId){
 
-              className="
-                w-40
-                h-40
-                rounded-full
-                object-cover
-                mx-auto
-                mb-6
-              "
+              router.push(
+                `/admin/evento/${usuario.eventoId}`
+              );
 
-              alt="Perfil"
+            }else{
 
-            />
+              router.push("/admin");
 
-          ) : (
+            }
 
+          }}
 
-            <div className="
-              w-40
-              h-40
-              rounded-full
-              bg-gray-300
-              mx-auto
-              mb-6
-              flex
-              items-center
-              justify-center
-              text-5xl
-            ">
+          className="
+            mb-6
+            bg-slate-900
+            hover:bg-slate-700
+            text-white
+            px-5
+            py-3
+            rounded-xl
+            font-bold
+          "
 
-              👤
+        >
 
-            </div>
+          ⬅️ Volver a participantes
 
-
-          )
-
-        }
+        </button>
 
 
 
 
 
-        <h1 className="
-          text-3xl
-          font-bold
-          text-black
+
+        <div className="
+          bg-white
+          rounded-3xl
+          shadow-lg
+          p-8
+          text-center
         ">
 
 
-          {usuario.nombre}
 
 
-        </h1>
+          {
+            usuario.foto ? (
 
+              <img
 
+                src={usuario.foto}
 
+                className="
+                  w-40
+                  h-40
+                  rounded-full
+                  object-cover
+                  mx-auto
+                  mb-6
+                "
 
+                alt="Perfil"
 
-        {
-          usuario.edad && (
+              />
 
-            <p className="text-gray-600 mt-2">
-
-              Edad: {usuario.edad}
-
-            </p>
-
-          )
-        }
-
-
-
-
-
-
-        {
-          usuario.genero && (
-
-            <p className="text-gray-600">
-
-              Género: {usuario.genero}
-
-            </p>
-
-          )
-        }
-
-
-
-
-
-
-        {
-          usuario.busca && (
-
-            <p className="text-gray-600">
-
-              Busca: {usuario.busca}
-
-            </p>
-
-          )
-        }
-
-
-
-
-
-
-        {
-          usuario.intereses &&
-          usuario.intereses.length > 0 && (
-
-
-            <div className="mt-6">
-
-
-              <h2 className="
-                font-bold
-                text-black
-                mb-3
-              ">
-
-                Intereses
-
-              </h2>
-
+            ) : (
 
 
               <div className="
+                w-40
+                h-40
+                rounded-full
+                bg-gray-300
+                mx-auto
+                mb-6
                 flex
-                flex-wrap
+                items-center
                 justify-center
-                gap-2
+                text-5xl
               ">
 
+                👤
 
-                {
-                  usuario.intereses.map(
-                    (interes,index)=>(
+              </div>
 
-                      <span
 
-                        key={index}
+            )
 
-                        className="
-                          bg-blue-100
-                          text-blue-800
-                          px-3
-                          py-1
-                          rounded-full
-                        "
+          }
 
-                      >
 
-                        {interes}
 
-                      </span>
 
+
+
+
+          <h1 className="
+            text-3xl
+            font-bold
+            text-black
+          ">
+
+
+            {usuario.nombre}
+
+
+          </h1>
+
+
+
+
+
+
+
+
+          {
+            usuario.edad && (
+
+              <p className="text-gray-600 mt-2">
+
+                Edad: {usuario.edad}
+
+              </p>
+
+            )
+          }
+
+
+
+
+
+
+
+
+          {
+            usuario.genero && (
+
+              <p className="text-gray-600">
+
+                Género: {usuario.genero}
+
+              </p>
+
+            )
+          }
+
+
+
+
+
+
+
+
+          {
+            usuario.busca && (
+
+              <p className="text-gray-600">
+
+                Busca: {usuario.busca}
+
+              </p>
+
+            )
+          }
+
+
+
+
+
+
+
+
+
+          {
+            usuario.intereses &&
+            usuario.intereses.length > 0 && (
+
+
+              <div className="mt-6">
+
+
+                <h2 className="
+                  font-bold
+                  text-black
+                  mb-3
+                ">
+
+                  Intereses
+
+                </h2>
+
+
+
+
+                <div className="
+                  flex
+                  flex-wrap
+                  justify-center
+                  gap-2
+                ">
+
+
+                  {
+                    usuario.intereses.map(
+                      (interes,index)=>(
+
+                        <span
+
+                          key={index}
+
+                          className="
+                            bg-blue-100
+                            text-blue-800
+                            px-3
+                            py-1
+                            rounded-full
+                          "
+
+                        >
+
+                          {interes}
+
+                        </span>
+
+                      )
                     )
-                  )
 
-                }
+                  }
+
+
+
+                </div>
 
 
               </div>
 
 
-            </div>
+            )
+
+          }
 
 
-          )
-
-        }
 
 
+
+        </div>
 
 
 
