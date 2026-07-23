@@ -6,7 +6,8 @@ import { useParams, useRouter } from "next/navigation";
 import {
   getEvent,
   getEventUsers,
-  getEventMatches
+  getEventMatches,
+  removeUserFromEvent
 } from "@/lib/events";
 
 
@@ -117,6 +118,62 @@ export default function EventoAdminPage(){
 
 
 
+  async function eliminarParticipante(
+    usuarioId:string
+  ){
+
+
+    const confirmar =
+      confirm(
+        "¿Seguro que querés sacar este participante de la fiesta?"
+      );
+
+
+
+    if(!confirmar){
+
+      return;
+
+    }
+
+
+
+    try{
+
+
+      await removeUserFromEvent(
+        usuarioId
+      );
+
+
+      await cargarDatos();
+
+
+
+    }catch(error){
+
+
+      console.error(
+        "Error eliminando participante:",
+        error
+      );
+
+
+      alert(
+        "No se pudo eliminar el participante"
+      );
+
+
+    }
+
+
+  }
+
+
+
+
+
+
   useEffect(()=>{
 
 
@@ -128,6 +185,7 @@ export default function EventoAdminPage(){
 
 
   },[id]);
+
 
 
 
@@ -241,7 +299,11 @@ export default function EventoAdminPage(){
 
 
           </div>
-                    <button
+
+
+
+
+          <button
 
             onClick={()=> 
               router.push(
@@ -438,6 +500,37 @@ export default function EventoAdminPage(){
 
                           )
                         }
+
+
+
+                        <button
+
+                          onClick={(e)=>{
+
+                            e.stopPropagation();
+
+                            eliminarParticipante(
+                              usuario.id
+                            );
+
+                          }}
+
+                          className="
+                            bg-red-600
+                            hover:bg-red-700
+                            text-white
+                            px-4
+                            py-2
+                            rounded-xl
+                            mt-4
+                            font-bold
+                          "
+
+                        >
+
+                          🗑️ Sacar de la fiesta
+
+                        </button>
 
 
 

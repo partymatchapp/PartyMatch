@@ -474,3 +474,59 @@ export async function getEventMatches(
 
 
 }
+
+
+
+
+
+
+
+
+
+// 🗑️ Sacar participante solamente de este evento
+export async function removeUserFromEvent(
+  usuarioId:string
+){
+
+  try{
+
+
+    const usuarioRef = doc(
+      db,
+      "usuarios",
+      usuarioId
+    );
+
+
+    await updateDoc(
+      usuarioRef,
+      {
+
+        eventoId:null
+
+      }
+    );
+
+
+    console.log(
+      "👤 Participante eliminado del evento:",
+      usuarioId
+    );
+
+
+  }catch(error){
+
+
+    console.error(
+      "❌ Error eliminando participante del evento:",
+      error
+    );
+
+
+    throw error;
+
+
+  }
+
+
+}
