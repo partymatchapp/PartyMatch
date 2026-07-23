@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+import { signOut } from "firebase/auth";
+
+import { auth } from "@/lib/firebase";
+
 import { useUser } from "@/context/UserContext";
+
 import {
   createEvent,
   getMyEvents,
@@ -19,37 +26,57 @@ type Evento = {
 };
 
 
+
 export default function AdminPage() {
+
+
+  const router = useRouter();
 
   const { user } = useUser();
 
-  const [nombre, setNombre] = useState("");
-  const [fecha, setFecha] = useState("");
 
-  const [eventos, setEventos] = useState<Evento[]>([]);
+  const [nombre,setNombre] = useState("");
 
-  const [creando, setCreando] = useState(false);
-  const [cargando, setCargando] = useState(true);
+  const [fecha,setFecha] = useState("");
+
+  const [eventos,setEventos] =
+    useState<Evento[]>([]);
+
+  const [creando,setCreando] =
+    useState(false);
+
+  const [cargando,setCargando] =
+    useState(true);
 
 
 
-  async function cargarEventos() {
-
-    if (!user) return;
 
 
-    try {
+  async function cargarEventos(){
+
+
+    if(!user){
+      return;
+    }
+
+
+    try{
+
 
       setCargando(true);
 
 
-      const resultado = await getMyEvents(user.uid);
+      const resultado =
+        await getMyEvents(user.uid);
 
 
-      setEventos(resultado as Evento[]);
+      setEventos(
+        resultado as Evento[]
+      );
 
 
-    } catch (error) {
+    }catch(error){
+
 
       console.error(
         "Error cargando eventos:",
@@ -57,89 +84,157 @@ export default function AdminPage() {
       );
 
 
-    } finally {
+    }finally{
+
 
       setCargando(false);
 
+
     }
+
 
   }
 
 
 
-  useEffect(() => {
+
+
+
+  useEffect(()=>{
+
 
     cargarEventos();
 
-  }, [user]);
+
+  },[user]);
 
 
 
 
 
-  async function handleCreate() {
-
-    if (!user) return;
 
 
-    if (!nombre.trim()) {
+  async function cerrarSesion(){
+
+
+    try{
+
+
+      await signOut(auth);
+
+
+      router.push("/login");
+
+
+    }catch(error){
+
+
+      console.error(
+        "Error cerrando sesión:",
+        error
+      );
+
+
+    }
+
+
+  }
+
+
+
+
+
+
+
+  async function handleCreate(){
+
+
+    if(!user){
+      return;
+    }
+
+
+    if(!nombre.trim()){
+
 
       alert(
         "Ingresá un nombre para el evento."
       );
 
+
       return;
+
 
     }
 
 
-    if (!fecha) {
+    if(!fecha){
+
 
       alert(
         "Seleccioná una fecha."
       );
 
+
       return;
+
 
     }
 
 
 
-    try {
+    try{
+
 
       setCreando(true);
 
 
+
       await createEvent(
+
         nombre,
+
         fecha,
+
         user.uid
+
       );
 
 
+
       setNombre("");
+
       setFecha("");
+
 
 
       await cargarEventos();
 
 
-    } catch(error) {
+
+    }catch(error){
+
 
       console.error(error);
+
 
       alert(
         "No se pudo crear el evento."
       );
 
 
-    } finally {
+    }finally{
+
 
       setCreando(false);
 
+
     }
 
+
   }
+
+
 
 
 
@@ -148,16 +243,19 @@ export default function AdminPage() {
   async function handleDelete(id:string){
 
 
-    const confirmar = confirm(
-      "¿Seguro que querés eliminar este evento?"
-    );
+    const confirmar =
+      confirm(
+        "¿Seguro que querés eliminar este evento?"
+      );
 
 
-    if(!confirmar) return;
+    if(!confirmar){
+      return;
+    }
 
 
 
-    try {
+    try{
 
 
       await deleteEvent(id);
@@ -167,7 +265,7 @@ export default function AdminPage() {
 
 
 
-    } catch(error) {
+    }catch(error){
 
 
       console.error(error);
@@ -187,29 +285,59 @@ export default function AdminPage() {
 
 
 
+
+
+
+
   return (
 
     <main className="min-h-screen bg-slate-100">
 
 
-      <header className="bg-slate-900 text-white shadow-lg">
+      <header className="
+        bg-slate-900
+        text-white
+        shadow-lg
+      ">
 
-        <div className="max-w-6xl mx-auto px-6 py-5 flex justify-between items-center">
+
+        <div className="
+          max-w-6xl
+          mx-auto
+          px-6
+          py-5
+          flex
+          justify-between
+          items-center
+        ">
 
 
           <div>
 
-            <h1 className="text-3xl font-bold">
+
+            <h1 className="
+              text-3xl
+              font-bold
+            ">
+
               🎉 PartyMatch
+
             </h1>
 
 
-            <p className="text-sm text-gray-300">
+            <p className="
+              text-sm
+              text-gray-300
+            ">
+
               Panel de Administración
+
             </p>
 
 
           </div>
+
+
 
 
 
@@ -217,22 +345,53 @@ export default function AdminPage() {
 
 
             <p className="font-bold">
+
               {
                 user?.displayName ||
                 "Administrador"
               }
+
             </p>
 
 
-            <p className="text-xs text-gray-400">
+            <p className="
+              text-xs
+              text-gray-400
+              mb-3
+            ">
+
               {user?.email}
+
             </p>
+
+
+
+            <button
+
+              onClick={cerrarSesion}
+
+              className="
+                bg-red-600
+                hover:bg-red-700
+                px-4
+                py-2
+                rounded-xl
+                text-sm
+                font-bold
+              "
+
+            >
+
+              🚪 Salir
+
+            </button>
 
 
           </div>
 
 
         </div>
+
 
       </header>
 
@@ -240,78 +399,37 @@ export default function AdminPage() {
 
 
 
-      <div className="max-w-6xl mx-auto p-6">
 
 
-
-        <div className="grid md:grid-cols-4 gap-4 mb-8">
-
-
-          <div className="bg-white rounded-2xl shadow p-5">
-
-            <h2 className="text-gray-500 text-sm">
-              Eventos
-            </h2>
-
-
-            <p className="text-3xl font-bold text-black mt-2">
-              {eventos.length}
-            </p>
-
-          </div>
-
-
-          <div className="bg-white rounded-2xl shadow p-5">
-
-            <h2 className="text-gray-500 text-sm">
-              Participantes
-            </h2>
-
-            <p className="text-3xl font-bold text-black mt-2">
-              --
-            </p>
-
-          </div>
-
-
-          <div className="bg-white rounded-2xl shadow p-5">
-
-            <h2 className="text-gray-500 text-sm">
-              Matches
-            </h2>
-
-            <p className="text-3xl font-bold text-black mt-2">
-              --
-            </p>
-
-          </div>
-
-
-          <div className="bg-white rounded-2xl shadow p-5">
-
-            <h2 className="text-gray-500 text-sm">
-              Mensajes
-            </h2>
-
-            <p className="text-3xl font-bold text-black mt-2">
-              --
-            </p>
-
-          </div>
-
-
-        </div>
+      <div className="
+        max-w-6xl
+        mx-auto
+        p-6
+      ">
 
 
 
 
+        <div className="
+          bg-white
+          rounded-2xl
+          shadow-lg
+          p-8
+          mb-8
+        ">
 
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
 
+          <h2 className="
+            text-2xl
+            font-bold
+            text-black
+            mb-6
+          ">
 
-          <h2 className="text-2xl font-bold text-black mb-6">
             Mis eventos
+
           </h2>
+
 
 
 
@@ -331,7 +449,6 @@ export default function AdminPage() {
               </p>
 
 
-
             ) : (
 
 
@@ -343,7 +460,9 @@ export default function AdminPage() {
 
 
                     <div
+
                       key={evento.id}
+
                       className="
                         border
                         rounded-xl
@@ -352,13 +471,18 @@ export default function AdminPage() {
                         justify-between
                         items-center
                       "
+
                     >
 
 
                       <div>
 
 
-                        <h3 className="text-xl font-bold text-black">
+                        <h3 className="
+                          text-xl
+                          font-bold
+                          text-black
+                        ">
 
                           🎉 {evento.nombre}
 
@@ -376,7 +500,12 @@ export default function AdminPage() {
 
 
 
-                      <div className="flex gap-3">
+
+
+                      <div className="
+                        flex
+                        gap-3
+                      ">
 
 
                         <EventQR
@@ -387,7 +516,9 @@ export default function AdminPage() {
 
                         <button
 
-                          onClick={()=>handleDelete(evento.id)}
+                          onClick={()=>
+                            handleDelete(evento.id)
+                          }
 
                           className="
                             bg-red-600
@@ -408,7 +539,6 @@ export default function AdminPage() {
                       </div>
 
 
-
                     </div>
 
 
@@ -421,8 +551,8 @@ export default function AdminPage() {
 
 
             )
-          }
 
+          }
 
 
         </div>
@@ -431,10 +561,22 @@ export default function AdminPage() {
 
 
 
-        <div className="bg-white rounded-2xl shadow-lg p-8">
 
 
-          <h2 className="text-2xl font-bold text-black mb-6">
+        <div className="
+          bg-white
+          rounded-2xl
+          shadow-lg
+          p-8
+        ">
+
+
+          <h2 className="
+            text-2xl
+            font-bold
+            text-black
+            mb-6
+          ">
 
             Crear Evento
 
@@ -442,20 +584,35 @@ export default function AdminPage() {
 
 
 
-          <div className="grid md:grid-cols-2 gap-4">
+
+
+          <div className="
+            grid
+            md:grid-cols-2
+            gap-4
+          ">
+
 
 
             <input
 
               value={nombre}
 
-              onChange={(e)=>setNombre(e.target.value)}
+              onChange={(e)=>
+                setNombre(e.target.value)
+              }
 
               placeholder="Nombre del evento"
 
-              className="border rounded-xl p-4 text-black"
+              className="
+                border
+                rounded-xl
+                p-4
+                text-black
+              "
 
             />
+
 
 
 
@@ -465,14 +622,24 @@ export default function AdminPage() {
 
               value={fecha}
 
-              onChange={(e)=>setFecha(e.target.value)}
+              onChange={(e)=>
+                setFecha(e.target.value)
+              }
 
-              className="border rounded-xl p-4 text-black"
+              className="
+                border
+                rounded-xl
+                p-4
+                text-black
+              "
 
             />
 
 
           </div>
+
+
+
 
 
 
@@ -495,14 +662,18 @@ export default function AdminPage() {
 
           >
 
+
             {
               creando
-              ? "Creando..."
-              : "Crear Evento"
+              ?
+              "Creando..."
+              :
+              "Crear Evento"
             }
 
 
           </button>
+
 
 
         </div>
@@ -512,8 +683,10 @@ export default function AdminPage() {
       </div>
 
 
+
     </main>
 
   );
+
 
 }
