@@ -38,6 +38,7 @@ export default function AdminPage(){
   const { user } = useUser();
 
 
+
   const [email,setEmail] = useState("");
 
   const [password,setPassword] = useState("");
@@ -45,6 +46,7 @@ export default function AdminPage(){
   const [loginError,setLoginError] = useState("");
 
   const [logueando,setLogueando] = useState(false);
+
 
 
   const [nombre,setNombre] = useState("");
@@ -66,21 +68,33 @@ export default function AdminPage(){
 
   async function ingresarAdministrador(){
 
+
     try{
 
+
       setLogueando(true);
+
       setLoginError("");
 
+
+
       await signInWithEmailAndPassword(
+
         auth,
+
         email,
+
         password
+
       );
+
 
 
     }catch(error){
 
+
       console.error(error);
+
 
       setLoginError(
         "Email o contraseña incorrectos"
@@ -89,11 +103,15 @@ export default function AdminPage(){
 
     }finally{
 
+
       setLogueando(false);
+
 
     }
 
+
   }
+
 
 
 
@@ -103,18 +121,25 @@ export default function AdminPage(){
 
   async function cargarEventos(){
 
+
     if(!user){
+
       return;
+
     }
+
 
 
     try{
 
+
       setCargando(true);
+
 
 
       const resultado =
         await getMyEvents(user.uid);
+
 
 
       setEventos(
@@ -122,7 +147,9 @@ export default function AdminPage(){
       );
 
 
+
     }catch(error){
+
 
       console.error(
         "Error cargando eventos:",
@@ -132,9 +159,12 @@ export default function AdminPage(){
 
     }finally{
 
+
       setCargando(false);
 
+
     }
+
 
   }
 
@@ -142,9 +172,13 @@ export default function AdminPage(){
 
 
 
+
+
   useEffect(()=>{
 
+
     cargarEventos();
+
 
   },[user]);
 
@@ -154,23 +188,31 @@ export default function AdminPage(){
 
 
 
+
   async function cerrarSesion(){
+
 
     try{
 
+
       await signOut(auth);
+
 
       router.push("/login");
 
 
+
     }catch(error){
+
 
       console.error(
         "Error cerrando sesión:",
         error
       );
 
+
     }
+
 
   }
 
@@ -179,46 +221,68 @@ export default function AdminPage(){
 
 
 
+
+
   async function handleCreate(){
 
+
     if(!user){
+
       return;
+
     }
 
 
+
     if(!nombre.trim()){
+
 
       alert(
         "Ingresá un nombre para el evento."
       );
 
+
       return;
+
 
     }
 
 
+
     if(!fecha){
+
 
       alert(
         "Seleccioná una fecha."
       );
 
+
       return;
+
 
     }
 
 
 
+
+
     try{
+
 
       setCreando(true);
 
 
+
       await createEvent(
+
         nombre,
+
         fecha,
+
         user.uid
+
       );
+
 
 
       setNombre("");
@@ -226,10 +290,14 @@ export default function AdminPage(){
       setFecha("");
 
 
+
       await cargarEventos();
 
 
+
+
     }catch(error){
+
 
       console.error(error);
 
@@ -241,11 +309,16 @@ export default function AdminPage(){
 
     }finally{
 
+
       setCreando(false);
+
 
     }
 
+
   }
+
+
 
 
 
@@ -254,25 +327,34 @@ export default function AdminPage(){
 
   async function handleDelete(id:string){
 
+
     const confirmar =
       confirm(
         "¿Seguro que querés eliminar este evento?"
       );
 
 
+
     if(!confirmar){
+
       return;
+
     }
+
 
 
     try{
 
+
       await deleteEvent(id);
+
 
       await cargarEventos();
 
 
+
     }catch(error){
+
 
       console.error(error);
 
@@ -281,12 +363,20 @@ export default function AdminPage(){
         "No se pudo eliminar el evento."
       );
 
+
     }
 
+
   }
+
+
+
+
   if(!user){
 
+
     return(
+
 
       <main className="
         min-h-screen
@@ -297,6 +387,7 @@ export default function AdminPage(){
         p-6
       ">
 
+
         <div className="
           bg-white
           rounded-3xl
@@ -305,6 +396,7 @@ export default function AdminPage(){
           max-w-md
         ">
 
+
           <h1 className="
             text-3xl
             font-bold
@@ -312,8 +404,11 @@ export default function AdminPage(){
             text-center
             mb-6
           ">
+
             🎉 PartyMatch Admin
+
           </h1>
+
 
 
           <input
@@ -372,7 +467,9 @@ export default function AdminPage(){
                 text-center
                 mb-4
               ">
+
                 {loginError}
+
               </p>
 
             )
@@ -412,6 +509,7 @@ export default function AdminPage(){
 
       </main>
 
+
     );
 
   }
@@ -420,7 +518,10 @@ export default function AdminPage(){
 
 
 
+
+
   return(
+
 
     <main className="
       min-h-screen
@@ -448,11 +549,14 @@ export default function AdminPage(){
 
           <div>
 
+
             <h1 className="
               text-3xl
               font-bold
             ">
+
               🎉 PartyMatch
+
             </h1>
 
 
@@ -460,10 +564,15 @@ export default function AdminPage(){
               text-sm
               text-gray-300
             ">
+
               Panel de Administración
+
             </p>
 
+
           </div>
+
+
 
 
 
@@ -485,7 +594,9 @@ export default function AdminPage(){
               text-gray-400
               mb-3
             ">
+
               {user.email}
+
             </p>
 
 
@@ -505,6 +616,7 @@ export default function AdminPage(){
               "
 
             >
+
               🚪 Salir
 
             </button>
@@ -529,7 +641,6 @@ export default function AdminPage(){
       ">
 
 
-
         <div className="
           bg-white
           rounded-2xl
@@ -545,8 +656,11 @@ export default function AdminPage(){
             text-black
             mb-6
           ">
+
             Mis eventos
+
           </h2>
+
 
 
 
@@ -560,6 +674,7 @@ export default function AdminPage(){
 
             ) : eventos.length === 0 ? (
 
+
               <p className="text-gray-500">
                 Todavía no tenés eventos creados.
               </p>
@@ -567,14 +682,18 @@ export default function AdminPage(){
 
             ) : (
 
+
               <div className="space-y-4">
 
 
                 {
                   eventos.map((evento)=>(
 
+
                     <div
+
                       key={evento.id}
+
                       className="
                         border
                         rounded-xl
@@ -583,25 +702,33 @@ export default function AdminPage(){
                         justify-between
                         items-center
                       "
+
                     >
 
+
                       <div>
+
 
                         <h3 className="
                           text-xl
                           font-bold
                           text-black
                         ">
+
                           🎉 {evento.nombre}
+
                         </h3>
 
 
                         <p className="text-gray-600">
+
                           Fecha: {evento.fecha}
+
                         </p>
 
 
                       </div>
+
 
 
 
@@ -614,6 +741,32 @@ export default function AdminPage(){
                         <EventQR
                           eventoId={evento.id}
                         />
+
+
+
+                        <button
+
+                          onClick={()=>
+                            router.push(
+                              `/admin/evento/${evento.id}`
+                            )
+                          }
+
+                          className="
+                            bg-green-600
+                            hover:bg-green-700
+                            text-white
+                            px-5
+                            py-2
+                            rounded-xl
+                          "
+
+                        >
+
+                          👥 Participantes
+
+                        </button>
+
 
 
 
@@ -633,6 +786,7 @@ export default function AdminPage(){
                           "
 
                         >
+
                           Eliminar
 
                         </button>
@@ -643,6 +797,7 @@ export default function AdminPage(){
 
                     </div>
 
+
                   ))
 
                 }
@@ -650,13 +805,13 @@ export default function AdminPage(){
 
               </div>
 
+
             )
 
           }
 
 
         </div>
-
 
 
 
@@ -676,8 +831,11 @@ export default function AdminPage(){
             text-black
             mb-6
           ">
+
             Crear Evento
+
           </h2>
+
 
 
 
@@ -734,6 +892,7 @@ export default function AdminPage(){
 
 
 
+
           <button
 
             onClick={handleCreate}
@@ -753,6 +912,7 @@ export default function AdminPage(){
 
           >
 
+
             {
               creando
               ? "Creando..."
@@ -771,6 +931,7 @@ export default function AdminPage(){
 
 
     </main>
+
 
   );
 
