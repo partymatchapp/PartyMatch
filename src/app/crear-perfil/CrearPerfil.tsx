@@ -4,7 +4,10 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { loginAnonymous } from "@/lib/auth";
-import { updateUserProfile } from "@/lib/users";
+import {
+  updateUserProfile,
+  joinEvent
+} from "@/lib/users";
 
 import {
   ref,
@@ -15,7 +18,8 @@ import {
 import { storage } from "@/lib/firebase";
 
 
-export default function CrearPerfilPage() {
+
+export default function CrearPerfil(){
 
 
   const router = useRouter();
@@ -23,6 +27,12 @@ export default function CrearPerfilPage() {
   const searchParams = useSearchParams();
 
   const eventoId = searchParams.get("evento");
+
+
+  console.log(
+    "🎯 Evento recibido:",
+    eventoId
+  );
 
 
 
@@ -34,7 +44,7 @@ export default function CrearPerfilPage() {
 
   const [busca,setBusca] = useState("");
 
-  const [foto,setFoto] = useState<File | null>(null);
+  const [foto,setFoto] = useState<File|null>(null);
 
   const [preview,setPreview] = useState("");
 
@@ -45,23 +55,19 @@ export default function CrearPerfilPage() {
 
 
   function seleccionarFoto(
-    e: React.ChangeEvent<HTMLInputElement>
+    e:React.ChangeEvent<HTMLInputElement>
   ){
 
-
     const archivo = e.target.files?.[0];
-
 
     if(!archivo) return;
 
 
     setFoto(archivo);
 
-
     setPreview(
       URL.createObjectURL(archivo)
     );
-
 
   }
 
@@ -69,11 +75,7 @@ export default function CrearPerfilPage() {
 
 
 
-
-
-
   async function crearPerfil(){
-
 
 
     if(
@@ -90,7 +92,6 @@ export default function CrearPerfilPage() {
       return;
 
     }
-
 
 
 
@@ -113,12 +114,6 @@ export default function CrearPerfilPage() {
     try{
 
 
-      console.log(
-        "⏳ Creando usuario..."
-      );
-
-
-
       const user = await loginAnonymous();
 
 
@@ -131,20 +126,6 @@ export default function CrearPerfilPage() {
 
       }
 
-
-
-      console.log(
-        "✅ Usuario:",
-        user.uid
-      );
-
-
-
-
-
-      console.log(
-        "⏳ Subiendo foto..."
-      );
 
 
 
@@ -168,20 +149,10 @@ export default function CrearPerfilPage() {
 
 
 
-      const urlFoto = await getDownloadURL(
-
-        imagenRef
-
-      );
-
-
-
-      console.log(
-        "✅ Foto subida:",
-        urlFoto
-      );
-
-
+      const urlFoto =
+        await getDownloadURL(
+          imagenRef
+        );
 
 
 
@@ -197,11 +168,11 @@ export default function CrearPerfilPage() {
 
           edad,
 
-          foto:urlFoto,
-
           genero,
 
           busca,
+
+          foto:urlFoto,
 
           intereses:[]
 
@@ -213,36 +184,42 @@ export default function CrearPerfilPage() {
 
 
 
-      console.log(
-        "✅ Perfil creado"
+      if(!eventoId){
+
+        throw new Error(
+          "No llegó el ID del evento"
+        );
+
+      }
+
+
+
+
+
+      await joinEvent(
+
+        user.uid,
+
+        eventoId
+
       );
 
 
 
 
 
-
-      if(eventoId){
-
-
-        router.push(
-
-          `/evento/${eventoId}`
-
-        );
+      console.log(
+        "🎉 Usuario unido al evento:",
+        eventoId
+      );
 
 
-      }else{
 
 
-        router.push(
 
-          `/perfil/${user.uid}`
-
-        );
-
-
-      }
+      router.push(
+        `/evento/${eventoId}`
+      );
 
 
 
@@ -250,22 +227,16 @@ export default function CrearPerfilPage() {
     }catch(error:any){
 
 
-
       console.error(
-        "❌ Error creando perfil:",
+        "❌ ERROR:",
         error
       );
 
 
-
       alert(
-
         error.message ||
-
         "Error creando perfil"
-
       );
-
 
 
     }finally{
@@ -278,8 +249,6 @@ export default function CrearPerfilPage() {
 
 
   }
-
-
 
 
 
@@ -320,29 +289,24 @@ export default function CrearPerfilPage() {
         </h1>
 
 
+        {preview && (
 
-        {
-          preview && (
+          <img
 
-            <img
+            src={preview}
 
-              src={preview}
+            className="
+              w-32
+              h-32
+              rounded-full
+              object-cover
+              mx-auto
+              mt-6
+            "
 
-              className="
-                w-32
-                h-32
-                rounded-full
-                object-cover
-                mx-auto
-                mt-6
-              "
+          />
 
-            />
-
-          )
-        }
-
-
+        )}
 
 
 
@@ -357,7 +321,7 @@ export default function CrearPerfilPage() {
           cursor-pointer
         ">
 
-          📷 Elegir foto obligatoria
+          📷 Elegir foto
 
 
           <input
@@ -372,10 +336,7 @@ export default function CrearPerfilPage() {
 
           />
 
-
         </label>
-
-
 
 
 
@@ -400,8 +361,6 @@ export default function CrearPerfilPage() {
 
 
 
-
-
         <input
 
           value={edad}
@@ -422,8 +381,6 @@ export default function CrearPerfilPage() {
           "
 
         />
-
-
 
 
 
@@ -461,9 +418,6 @@ export default function CrearPerfilPage() {
 
 
 
-
-
-
         <select
 
           value={busca}
@@ -498,12 +452,7 @@ export default function CrearPerfilPage() {
             Todos
           </option>
 
-
         </select>
-
-
-
-
 
 
 
@@ -517,7 +466,6 @@ export default function CrearPerfilPage() {
             w-full
             mt-6
             bg-purple-600
-            hover:bg-purple-700
             text-white
             py-3
             rounded-xl
@@ -534,16 +482,13 @@ export default function CrearPerfilPage() {
             "Entrar a la fiesta 🎉"
           }
 
-
         </button>
 
 
       </div>
 
-
     </main>
 
   );
-
 
 }

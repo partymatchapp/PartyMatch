@@ -11,8 +11,10 @@ export default function EventQR({
 
   const [mostrar, setMostrar] = useState(false);
 
+
   const enlace =
-    `${window.location.origin}/evento/${eventoId}`;
+    `${window.location.origin}/crear-perfil?evento=${eventoId}`;
+
 
 
   async function copiarEnlace() {
@@ -22,6 +24,7 @@ export default function EventQR({
     alert("✅ Enlace copiado");
 
   }
+
 
 
   return (
@@ -40,6 +43,7 @@ export default function EventQR({
       >
         📱 QR
       </button>
+
 
 
       {
@@ -66,20 +70,25 @@ export default function EventQR({
               "
             >
 
-              <h2 className="
-                text-xl
-                font-bold
-                mb-5
-                text-black
-              ">
-                Escaneá para entrar
+
+              <h2
+                className="
+                  text-xl
+                  font-bold
+                  mb-5
+                  text-black
+                "
+              >
+                Escaneá para entrar 🎉
               </h2>
+
 
 
               <QRCodeSVG
                 value={enlace}
                 size={220}
               />
+
 
 
               <button
@@ -95,6 +104,7 @@ export default function EventQR({
               >
                 🔗 Copiar enlace
               </button>
+
 
 
               <button

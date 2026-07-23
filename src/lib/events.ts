@@ -15,24 +15,37 @@ import { db } from "./firebase";
 
 
 
+
+
 export async function createEvent(
-  nombre: string,
-  fecha: string,
-  userId: string
+  nombre:string,
+  fecha:string,
+  userId:string
 ) {
 
-  const eventosRef = collection(db, "eventos");
+
+  const eventosRef = collection(
+    db,
+    "eventos"
+  );
 
 
-  const nuevoEvento = await addDoc(eventosRef, {
+  const nuevoEvento = await addDoc(
+    eventosRef,
+    {
 
-    nombre,
-    fecha,
-    activo: true,
-    creadoPor: userId,
-    creadoEn: new Date(),
+      nombre,
 
-  });
+      fecha,
+
+      activo:true,
+
+      creadoPor:userId,
+
+      creadoEn:new Date(),
+
+    }
+  );
 
 
   console.log(
@@ -43,6 +56,7 @@ export async function createEvent(
 
   return nuevoEvento.id;
 
+
 }
 
 
@@ -50,8 +64,10 @@ export async function createEvent(
 
 
 
+
+
 export async function getEvent(
-  eventId: string
+  eventId:string
 ) {
 
 
@@ -67,11 +83,14 @@ export async function getEvent(
 
     if(!eventId){
 
+
       console.error(
-        "❌ Evento ID vacío"
+        "❌ Evento vacío"
       );
 
+
       return null;
+
 
     }
 
@@ -86,30 +105,30 @@ export async function getEvent(
 
 
 
-    const eventoSnapshot = await getDoc(
+    const snapshot = await getDoc(
       eventoRef
     );
 
 
 
-
     console.log(
-      "📄 Existe evento:",
-      eventoSnapshot.exists()
+      "📄 Evento existe:",
+      snapshot.exists()
     );
 
 
 
-
-
-    if(eventoSnapshot.exists()){
+    if(snapshot.exists()){
 
 
       return {
 
-        id:eventoSnapshot.id,
 
-        ...eventoSnapshot.data()
+        id:snapshot.id,
+
+
+        ...snapshot.data()
+
 
       };
 
@@ -122,11 +141,11 @@ export async function getEvent(
 
 
 
-  } catch(error){
+  }catch(error){
 
 
     console.error(
-      "❌ Error cargando evento:",
+      "❌ Error obteniendo evento:",
       error
     );
 
@@ -145,47 +164,89 @@ export async function getEvent(
 
 
 
+
+
 export async function getEventUsers(
   eventId:string
-) {
-
-
-  const usuariosRef = collection(
-    db,
-    "usuarios"
-  );
+){
 
 
 
-  const usuariosQuery = query(
+  try{
 
-    usuariosRef,
 
-    where(
-      "eventoId",
-      "==",
+    console.log(
+      "👥 Buscando usuarios del evento:",
       eventId
-    )
-
-  );
+    );
 
 
 
-  const resultado = await getDocs(
-    usuariosQuery
-  );
+    const usuariosRef = collection(
+      db,
+      "usuarios"
+    );
 
 
 
-  return resultado.docs.map(
-    (item)=>({
+    const usuariosQuery = query(
 
-      id:item.id,
+      usuariosRef,
 
-      ...item.data()
+      where(
+        "eventoId",
+        "==",
+        eventId
+      )
 
-    })
-  );
+    );
+
+
+
+    const snapshot = await getDocs(
+      usuariosQuery
+    );
+
+
+
+    const usuarios = snapshot.docs.map(
+      (item)=>({
+
+        id:item.id,
+
+        ...item.data()
+
+      })
+    );
+
+
+
+    console.log(
+      "👥 Usuarios encontrados:",
+      usuarios.length,
+      usuarios
+    );
+
+
+
+    return usuarios;
+
+
+
+  }catch(error){
+
+
+    console.error(
+      "❌ Error buscando participantes:",
+      error
+    );
+
+
+    throw error;
+
+
+  }
+
 
 
 }
@@ -196,9 +257,11 @@ export async function getEventUsers(
 
 
 
+
+
 export async function getMyEvents(
   userId:string
-) {
+){
 
 
   const eventosRef = collection(
@@ -234,15 +297,21 @@ export async function getMyEvents(
   return snapshot.docs.map(
     (item)=>({
 
+
       id:item.id,
 
+
       ...item.data()
+
 
     })
   );
 
 
+
 }
+
+
 
 
 
@@ -252,19 +321,23 @@ export async function getMyEvents(
 
 export async function deleteEvent(
   eventId:string
-) {
+){
 
 
   await deleteDoc(
+
     doc(
       db,
       "eventos",
       eventId
     )
+
   );
 
 
 }
+
+
 
 
 
@@ -280,7 +353,7 @@ export async function updateEvent(
 
   fecha:string
 
-) {
+){
 
 
   await updateDoc(
@@ -295,7 +368,7 @@ export async function updateEvent(
 
       nombre,
 
-      fecha,
+      fecha
 
     }
 
