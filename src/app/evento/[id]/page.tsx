@@ -29,7 +29,7 @@ export default function EventoPage(){
   const id = params.id as string;
 
 
-  const { user } = useUser();
+  const { user, loading } = useUser();
 
 
 
@@ -51,14 +51,9 @@ export default function EventoPage(){
 
 
 
-
-
   async function cargarContador(){
 
-
-    if(!user){
-      return;
-    }
+    if(!user) return;
 
 
     try{
@@ -67,7 +62,6 @@ export default function EventoPage(){
         await getUnreadNotificationsCount(
           user.uid
         );
-
 
       setContador(cantidad);
 
@@ -81,10 +75,7 @@ export default function EventoPage(){
 
     }
 
-
   }
-
-
 
 
 
@@ -102,14 +93,15 @@ export default function EventoPage(){
         if(!id){
 
           throw new Error(
-            "No existe ID del evento"
+            "Evento inválido"
           );
 
         }
 
 
 
-        const datos = await getEvent(id);
+        const datos =
+          await getEvent(id);
 
 
 
@@ -122,52 +114,74 @@ export default function EventoPage(){
         }
 
 
-
         setEvento(datos);
 
 
 
+        if(loading){
 
-        if(user){
+          return;
 
-
-
-          const perfil =
-            await getUserProfile(
-              user.uid
-            );
-
-
-
-          if(
-            !perfil ||
-            !perfil.perfilCompleto
-          ){
-
-
-            router.push(
-              `/crear-perfil?evento=${id}`
-            );
-
-
-            return;
-
-          }
+        }
 
 
 
 
-          await joinEvent(
-            user.uid,
-            id
+        if(!user){
+
+
+          router.push(
+            `/login?evento=${id}`
+          );
+
+
+          return;
+
+        }
+
+
+
+
+
+        const perfil =
+          await getUserProfile(
+            user.uid
           );
 
 
 
-          await cargarContador();
 
+
+        if(
+          !perfil ||
+          !perfil.perfilCompleto
+        ){
+
+
+          router.push(
+            `/crear-perfil?evento=${id}`
+          );
+
+
+          return;
 
         }
+
+
+
+
+
+        await joinEvent(
+
+          user.uid,
+
+          id
+
+        );
+
+
+
+        await cargarContador();
 
 
 
@@ -175,6 +189,7 @@ export default function EventoPage(){
 
 
         console.error(
+          "Error evento:",
           error
         );
 
@@ -200,7 +215,12 @@ export default function EventoPage(){
     iniciar();
 
 
-  },[id,user]);
+
+  },[
+    id,
+    user,
+    loading
+  ]);
 
 
 
@@ -210,7 +230,7 @@ export default function EventoPage(){
 
 
 
-  if(cargando){
+  if(cargando || loading){
 
 
     return(
@@ -231,7 +251,6 @@ export default function EventoPage(){
     );
 
   }
-
 
 
 
@@ -261,6 +280,16 @@ export default function EventoPage(){
 
   }
 
+
+
+
+
+
+  if(!evento){
+
+    return null;
+
+  }
 
 
 
@@ -323,7 +352,9 @@ export default function EventoPage(){
               font-bold
             "
           >
+
             🔍 Descubrir
+
           </button>
 
 
@@ -343,19 +374,6 @@ export default function EventoPage(){
           >
 
             🔔 Notificaciones
-
-            {
-              contador > 0 &&
-              <span className="
-                ml-2
-                bg-red-500
-                px-2
-                py-1
-                rounded-full
-              ">
-                {contador}
-              </span>
-            }
 
           </button>
 
@@ -401,7 +419,6 @@ export default function EventoPage(){
 
 
         </div>
-
 
 
 
