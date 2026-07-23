@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
-import { getEvent, getEventUsers } from "@/lib/events";
+import {
+  getEvent,
+  getEventUsers,
+  getEventMatches
+} from "@/lib/events";
 
 
 type Usuario = {
@@ -38,6 +42,9 @@ export default function EventoAdminPage(){
   const [usuarios,setUsuarios] =
     useState<Usuario[]>([]);
 
+  const [cantidadMatches,setCantidadMatches] =
+    useState(0);
+
   const [cargando,setCargando] =
     useState(true);
 
@@ -61,10 +68,21 @@ export default function EventoAdminPage(){
 
 
 
+      const matches =
+        await getEventMatches(id);
+
+
+
       setEvento(datosEvento);
+
 
       setUsuarios(
         participantes as Usuario[]
+      );
+
+
+      setCantidadMatches(
+        matches.length
       );
 
 
@@ -73,7 +91,7 @@ export default function EventoAdminPage(){
 
 
       console.error(
-        "Error cargando participantes:",
+        "Error cargando evento:",
         error
       );
 
@@ -93,6 +111,8 @@ export default function EventoAdminPage(){
 
 
 
+
+
   useEffect(()=>{
 
 
@@ -104,6 +124,7 @@ export default function EventoAdminPage(){
 
 
   },[id]);
+
 
 
 
@@ -157,27 +178,74 @@ export default function EventoAdminPage(){
 
 
 
-        <h1 className="
-          text-3xl
-          font-bold
-          text-black
-          mb-2
-        ">
-
-          🎉 {evento?.nombre}
-
-        </h1>
-
-
-
-        <p className="
-          text-gray-600
+        <div className="
+          flex
+          justify-between
+          items-center
           mb-8
         ">
 
-          Participantes: {usuarios.length}
 
-        </p>
+
+          <div>
+
+
+            <h1 className="
+              text-3xl
+              font-bold
+              text-black
+            ">
+
+              🎉 {evento?.nombre}
+
+            </h1>
+
+
+            <p className="
+              text-gray-600
+            ">
+
+              Participantes: {usuarios.length}
+
+            </p>
+
+
+          </div>
+
+
+
+
+          <button
+
+            onClick={()=> 
+              router.push(
+                `/admin/estadisticas/${id}`
+              )
+            }
+
+            className="
+              bg-purple-600
+              hover:bg-purple-700
+              text-white
+              px-5
+              py-3
+              rounded-xl
+              font-bold
+            "
+
+          >
+
+            📊 Estadísticas
+            <br/>
+            ❤️ {cantidadMatches} matches
+
+          </button>
+
+
+
+        </div>
+
+
 
 
 
@@ -284,6 +352,7 @@ export default function EventoAdminPage(){
 
 
                         )
+
                       }
 
 
@@ -323,7 +392,6 @@ export default function EventoAdminPage(){
 
                           )
                         }
-
 
 
 

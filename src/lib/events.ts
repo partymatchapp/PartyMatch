@@ -166,6 +166,7 @@ export async function getEvent(
 
 
 
+
 export async function getEventUsers(
   eventId:string
 ){
@@ -259,6 +260,7 @@ export async function getEventUsers(
 
 
 
+
 export async function getMyEvents(
   userId:string
 ){
@@ -319,6 +321,7 @@ export async function getMyEvents(
 
 
 
+
 export async function deleteEvent(
   eventId:string
 ){
@@ -336,6 +339,7 @@ export async function deleteEvent(
 
 
 }
+
 
 
 
@@ -373,6 +377,100 @@ export async function updateEvent(
     }
 
   );
+
+
+}
+
+
+
+
+
+
+
+
+
+export async function getEventMatches(
+  eventId:string
+){
+
+
+  try{
+
+
+    console.log(
+      "❤️ Buscando matches del evento:",
+      eventId
+    );
+
+
+
+    const matchesRef = collection(
+      db,
+      "matches"
+    );
+
+
+
+    const matchesQuery = query(
+
+      matchesRef,
+
+      where(
+        "eventoId",
+        "==",
+        eventId
+      )
+
+    );
+
+
+
+    const snapshot = await getDocs(
+      matchesQuery
+    );
+
+
+
+    const matches = snapshot.docs.map(
+      (item)=>({
+
+
+        id:item.id,
+
+
+        ...item.data()
+
+
+      })
+    );
+
+
+
+    console.log(
+      "❤️ Matches encontrados:",
+      matches.length,
+      matches
+    );
+
+
+
+    return matches;
+
+
+
+  }catch(error){
+
+
+    console.error(
+      "❌ Error buscando matches:",
+      error
+    );
+
+
+    throw error;
+
+
+  }
 
 
 }
