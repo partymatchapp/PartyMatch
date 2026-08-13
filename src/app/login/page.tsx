@@ -1,10 +1,145 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import {
+  useRouter,
+  useSearchParams
+} from "next/navigation";
+
+import { loginWithUsername } from "@/lib/auth";
+
 
 export default function LoginPage() {
 
   const router = useRouter();
+
+  const searchParams = useSearchParams();
+
+  const eventoId =
+    searchParams.get("evento");
+
+
+  const [username, setUsername] = useState("");
+
+  const [password, setPassword] = useState("");
+
+  const [entrando, setEntrando] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+
+
+  async function handleLogin() {
+
+    setError("");
+
+
+    if (
+      !username.trim() ||
+      !password
+    ) {
+
+      setError(
+        "Ingresá tu usuario y contraseña."
+      );
+
+      return;
+
+    }
+
+
+    setEntrando(true);
+
+
+    try {
+
+      console.log(
+        "⏳ Iniciando login:",
+        username
+      );
+
+
+      const user =
+        await loginWithUsername(
+          username,
+          password
+        );
+
+
+      if (!user) {
+
+        setError(
+          "Usuario o contraseña incorrectos."
+        );
+
+        return;
+
+      }
+
+
+      console.log(
+        "✅ Usuario autenticado:",
+        user.uid
+      );
+
+
+      // ==================================================
+      // SI VENIMOS DESDE UN EVENTO
+      // ==================================================
+
+      if (eventoId) {
+
+        console.log(
+          "🎉 Login con evento:",
+          eventoId
+        );
+
+
+        router.push(
+          `/evento/${eventoId}`
+        );
+
+
+        return;
+
+      }
+
+
+      // ==================================================
+      // LOGIN NORMAL
+      // ==================================================
+
+      console.log(
+        "🏠 Login sin evento"
+      );
+
+
+      router.push("/");
+
+
+    } catch (error) {
+
+      console.error(
+        "❌ Error entrando:",
+        error
+      );
+
+
+      setError(
+        "No se pudo iniciar sesión."
+      );
+
+
+    } finally {
+
+      setEntrando(false);
+
+    }
+
+  }
+
 
 
   return (
@@ -15,6 +150,7 @@ export default function LoginPage() {
       items-center
       justify-center
       bg-slate-900
+      p-6
     ">
 
 
@@ -33,9 +169,11 @@ export default function LoginPage() {
           text-3xl
           font-bold
           text-black
-          mb-4
+          mb-2
         ">
+
           PartyMatch 🎉
+
         </h1>
 
 
@@ -43,19 +181,168 @@ export default function LoginPage() {
           text-gray-600
           mb-8
         ">
-          Creá tu perfil para participar.
+
+          Ingresá para continuar.
+
         </p>
 
 
 
+        {/* USUARIO */}
+
+        <input
+
+          type="text"
+
+          value={username}
+
+          onChange={(e) =>
+            setUsername(e.target.value)
+          }
+
+          placeholder="Usuario"
+
+          autoComplete="username"
+
+          className="
+            w-full
+            border
+            border-gray-300
+            rounded-xl
+            p-3
+            text-black
+            mb-4
+            outline-none
+            focus:ring-2
+            focus:ring-purple-500
+          "
+
+        />
+
+
+
+        {/* CONTRASEÑA */}
+
+        <input
+
+          type="password"
+
+          value={password}
+
+          onChange={(e) =>
+            setPassword(e.target.value)
+          }
+
+          placeholder="Contraseña"
+
+          autoComplete="current-password"
+
+          onKeyDown={(e) => {
+
+            if (e.key === "Enter") {
+
+              handleLogin();
+
+            }
+
+          }}
+
+          className="
+            w-full
+            border
+            border-gray-300
+            rounded-xl
+            p-3
+            text-black
+            mb-4
+            outline-none
+            focus:ring-2
+            focus:ring-purple-500
+          "
+
+        />
+
+
+
+        {/* ERROR */}
+
+        {error && (
+
+          <div className="
+            bg-red-100
+            text-red-700
+            rounded-xl
+            p-3
+            mb-4
+            text-sm
+            font-semibold
+          ">
+
+            {error}
+
+          </div>
+
+        )}
+
+
+
+        {/* LOGIN */}
+
         <button
 
-          onClick={() => router.push("/crear-perfil")}
+          onClick={handleLogin}
+
+          disabled={entrando}
 
           className="
             w-full
             bg-purple-600
             hover:bg-purple-700
+            disabled:bg-purple-300
+            text-white
+            font-bold
+            py-3
+            rounded-xl
+            mb-4
+          "
+
+        >
+
+          {entrando
+            ? "Ingresando..."
+            : "Ingresar"
+          }
+
+        </button>
+
+
+
+        {/* CREAR PERFIL */}
+
+        <button
+
+          onClick={() => {
+
+            if (eventoId) {
+
+              router.push(
+                `/crear-perfil?evento=${eventoId}`
+              );
+
+            } else {
+
+              router.push(
+                "/crear-perfil"
+              );
+
+            }
+
+          }}
+
+          className="
+            w-full
+            bg-black
+            hover:bg-slate-800
             text-white
             font-bold
             py-3
@@ -71,16 +358,19 @@ export default function LoginPage() {
 
 
 
+        {/* ADMIN */}
 
         <button
 
-          onClick={() => router.push("/admin")}
+          onClick={() =>
+            router.push("/admin")
+          }
 
           className="
             w-full
-            bg-slate-900
-            hover:bg-black
-            text-white
+            bg-slate-200
+            hover:bg-slate-300
+            text-slate-900
             font-bold
             py-3
             rounded-xl
@@ -91,7 +381,6 @@ export default function LoginPage() {
           🔐 Administrador
 
         </button>
-
 
 
       </div>

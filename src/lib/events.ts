@@ -17,45 +17,57 @@ import { db } from "./firebase";
 
 
 
+// ======================================================
+// CREAR EVENTO
+// ======================================================
+
 export async function createEvent(
-  nombre:string,
-  fecha:string,
-  userId:string
+  nombre: string,
+  fecha: string,
+  userId: string
 ) {
 
+  try {
 
-  const eventosRef = collection(
-    db,
-    "eventos"
-  );
+    const eventosRef = collection(
+      db,
+      "eventos"
+    );
 
+    const nuevoEvento = await addDoc(
+      eventosRef,
+      {
 
-  const nuevoEvento = await addDoc(
-    eventosRef,
-    {
+        nombre,
 
-      nombre,
+        fecha,
 
-      fecha,
+        activo: true,
 
-      activo:true,
+        creadoPor: userId,
 
-      creadoPor:userId,
+        creadoEn: new Date(),
 
-      creadoEn:new Date(),
+      }
+    );
 
-    }
-  );
+    console.log(
+      "🎉 Evento creado:",
+      nuevoEvento.id
+    );
 
+    return nuevoEvento.id;
 
-  console.log(
-    "🎉 Evento creado:",
-    nuevoEvento.id
-  );
+  } catch (error) {
 
+    console.error(
+      "❌ Error creando evento:",
+      error
+    );
 
-  return nuevoEvento.id;
+    throw error;
 
+  }
 
 }
 
@@ -63,39 +75,30 @@ export async function createEvent(
 
 
 
-
-
+// ======================================================
+// OBTENER EVENTO
+// ======================================================
 
 export async function getEvent(
-  eventId:string
+  eventId: string
 ) {
 
-
   try {
-
 
     console.log(
       "🔎 Buscando evento:",
       eventId
     );
 
-
-
-    if(!eventId){
-
+    if (!eventId) {
 
       console.error(
         "❌ Evento vacío"
       );
 
-
       return null;
 
-
     }
-
-
-
 
     const eventoRef = doc(
       db,
@@ -103,58 +106,39 @@ export async function getEvent(
       eventId
     );
 
-
-
     const snapshot = await getDoc(
       eventoRef
     );
-
-
 
     console.log(
       "📄 Evento existe:",
       snapshot.exists()
     );
 
-
-
-    if(snapshot.exists()){
-
+    if (snapshot.exists()) {
 
       return {
 
-
-        id:snapshot.id,
-
+        id: snapshot.id,
 
         ...snapshot.data()
 
-
       };
-
 
     }
 
-
-
     return null;
 
-
-
-  }catch(error){
-
+  } catch (error) {
 
     console.error(
       "❌ Error obteniendo evento:",
       error
     );
 
-
     throw error;
 
-
   }
-
 
 }
 
@@ -162,33 +146,25 @@ export async function getEvent(
 
 
 
-
-
-
-
+// ======================================================
+// OBTENER USUARIOS DEL EVENTO
+// ======================================================
 
 export async function getEventUsers(
-  eventId:string
-){
+  eventId: string
+) {
 
-
-
-  try{
-
+  try {
 
     console.log(
       "👥 Buscando usuarios del evento:",
       eventId
     );
 
-
-
     const usuariosRef = collection(
       db,
       "usuarios"
     );
-
-
 
     const usuariosQuery = query(
 
@@ -202,25 +178,19 @@ export async function getEventUsers(
 
     );
 
-
-
     const snapshot = await getDocs(
       usuariosQuery
     );
 
-
-
     const usuarios = snapshot.docs.map(
-      (item)=>({
+      (item) => ({
 
-        id:item.id,
+        id: item.id,
 
         ...item.data()
 
       })
     );
-
-
 
     console.log(
       "👥 Usuarios encontrados:",
@@ -228,27 +198,18 @@ export async function getEventUsers(
       usuarios
     );
 
-
-
     return usuarios;
 
-
-
-  }catch(error){
-
+  } catch (error) {
 
     console.error(
       "❌ Error buscando participantes:",
       error
     );
 
-
     throw error;
 
-
   }
-
-
 
 }
 
@@ -256,22 +217,18 @@ export async function getEventUsers(
 
 
 
-
-
-
-
+// ======================================================
+// OBTENER EVENTOS DEL ADMINISTRADOR
+// ======================================================
 
 export async function getMyEvents(
-  userId:string
-){
-
+  userId: string
+) {
 
   const eventosRef = collection(
     db,
     "eventos"
   );
-
-
 
   const q = query(
 
@@ -290,26 +247,17 @@ export async function getMyEvents(
 
   );
 
-
-
   const snapshot = await getDocs(q);
 
-
-
   return snapshot.docs.map(
-    (item)=>({
+    (item) => ({
 
-
-      id:item.id,
-
+      id: item.id,
 
       ...item.data()
 
-
     })
   );
-
-
 
 }
 
@@ -317,15 +265,13 @@ export async function getMyEvents(
 
 
 
-
-
-
-
+// ======================================================
+// ELIMINAR EVENTO
+// ======================================================
 
 export async function deleteEvent(
-  eventId:string
-){
-
+  eventId: string
+) {
 
   await deleteDoc(
 
@@ -337,28 +283,25 @@ export async function deleteEvent(
 
   );
 
-
 }
 
 
 
 
 
-
-
-
-
+// ======================================================
+// MODIFICAR EVENTO
+// ======================================================
 
 export async function updateEvent(
 
-  eventId:string,
+  eventId: string,
 
-  nombre:string,
+  nombre: string,
 
-  fecha:string
+  fecha: string
 
-){
-
+) {
 
   await updateDoc(
 
@@ -378,38 +321,31 @@ export async function updateEvent(
 
   );
 
-
 }
 
 
 
 
 
-
-
-
+// ======================================================
+// OBTENER MATCHES
+// ======================================================
 
 export async function getEventMatches(
-  eventId:string
-){
+  eventId: string
+) {
 
-
-  try{
-
+  try {
 
     console.log(
       "❤️ Buscando matches del evento:",
       eventId
     );
 
-
-
     const matchesRef = collection(
       db,
       "matches"
     );
-
-
 
     const matchesQuery = query(
 
@@ -423,28 +359,19 @@ export async function getEventMatches(
 
     );
 
-
-
     const snapshot = await getDocs(
       matchesQuery
     );
 
-
-
     const matches = snapshot.docs.map(
-      (item)=>({
+      (item) => ({
 
-
-        id:item.id,
-
+        id: item.id,
 
         ...item.data()
 
-
       })
     );
-
-
 
     console.log(
       "❤️ Matches encontrados:",
@@ -452,26 +379,18 @@ export async function getEventMatches(
       matches
     );
 
-
-
     return matches;
 
-
-
-  }catch(error){
-
+  } catch (error) {
 
     console.error(
       "❌ Error buscando matches:",
       error
     );
 
-
     throw error;
 
-
   }
-
 
 }
 
@@ -479,17 +398,15 @@ export async function getEventMatches(
 
 
 
+// ======================================================
+// SACAR PARTICIPANTE DEL EVENTO
+// ======================================================
 
-
-
-
-// 🗑️ Sacar participante solamente de este evento
 export async function removeUserFromEvent(
-  usuarioId:string
-){
+  usuarioId: string
+) {
 
-  try{
-
+  try {
 
     const usuarioRef = doc(
       db,
@@ -497,36 +414,31 @@ export async function removeUserFromEvent(
       usuarioId
     );
 
-
     await updateDoc(
       usuarioRef,
       {
 
-        eventoId:null
+        eventoId: null,
+
+        unidoEn: null
 
       }
     );
-
 
     console.log(
       "👤 Participante eliminado del evento:",
       usuarioId
     );
 
-
-  }catch(error){
-
+  } catch (error) {
 
     console.error(
       "❌ Error eliminando participante del evento:",
       error
     );
 
-
     throw error;
 
-
   }
-
 
 }

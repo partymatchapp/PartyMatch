@@ -1,13 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import {
+  useEffect,
+  useState
+} from "react";
 
-import { loginAnonymous } from "@/lib/auth";
+import {
+  useRouter,
+  useSearchParams
+} from "next/navigation";
+
+import {
+  onAuthStateChanged,
+  User
+} from "firebase/auth";
 
 import {
   updateUserProfile,
-  joinEvent
+  joinEvent,
+  getUserProfile
 } from "@/lib/users";
 
 import {
@@ -16,78 +27,366 @@ import {
   getDownloadURL
 } from "firebase/storage";
 
-import { storage } from "@/lib/firebase";
+import {
+  auth,
+  storage
+} from "@/lib/firebase";
 
 
 
-export default function CrearPerfil(){
+export default function CrearPerfil() {
 
 
-  const router = useRouter();
-
-  const searchParams = useSearchParams();
-
-  const eventoId = searchParams.get("evento");
+  const router =
+    useRouter();
 
 
+  const searchParams =
+    useSearchParams();
 
-  const [nombre,setNombre] = useState("");
 
-  const [edad,setEdad] = useState("");
-
-  const [genero,setGenero] = useState("");
-
-  const [busca,setBusca] = useState("");
+  const eventoId =
+    searchParams.get("evento");
 
 
 
-  const [foto,setFoto] =
-    useState<File|null>(null);
+  // =====================================================
+  // USUARIO AUTENTICADO
+  // =====================================================
+
+  const [
+    user,
+    setUser
+  ] = useState<User | null>(null);
 
 
-  const [fotosExtra,setFotosExtra] =
-    useState<File[]>([]);
-
-
-
-  const [preview,setPreview] =
-    useState("");
-
-
-
-  const [previewExtras,setPreviewExtras] =
-    useState<string[]>([]);
-
-
-
-  const [guardando,setGuardando] =
-    useState(false);
+  const [
+    cargandoUsuario,
+    setCargandoUsuario
+  ] = useState(true);
 
 
 
+  // =====================================================
+  // DATOS DEL PERFIL
+  // =====================================================
+
+  const [
+    nombre,
+    setNombre
+  ] = useState("");
+
+
+  const [
+    edad,
+    setEdad
+  ] = useState("");
+
+
+  const [
+    genero,
+    setGenero
+  ] = useState("");
+
+
+  const [
+    busca,
+    setBusca
+  ] = useState("");
+
+
+  const [
+    fotoExistente,
+    setFotoExistente
+  ] = useState("");
+
+
+  const [
+    fotosExistentes,
+    setFotosExistentes
+  ] = useState<string[]>([]);
 
 
 
+  // =====================================================
+  // NUEVAS FOTOS
+  // =====================================================
+
+  const [
+    foto,
+    setFoto
+  ] = useState<File | null>(null);
+
+
+  const [
+    fotosExtra,
+    setFotosExtra
+  ] = useState<File[]>([]);
+
+
+  const [
+    preview,
+    setPreview
+  ] = useState("");
+
+
+  const [
+    previewExtras,
+    setPreviewExtras
+  ] = useState<string[]>([]);
+
+
+
+  // =====================================================
+  // ESTADOS
+  // =====================================================
+
+  const [
+    guardando,
+    setGuardando
+  ] = useState(false);
+
+
+  const [
+    cargandoPerfil,
+    setCargandoPerfil
+  ] = useState(true);
+
+
+
+  // =====================================================
+  // ESCUCHAR AUTHENTICATION
+  // =====================================================
+
+  useEffect(() => {
+
+
+    const unsubscribe =
+      onAuthStateChanged(
+        auth,
+        async (usuario) => {
+
+
+          if (!usuario) {
+
+            console.log(
+              "⚠️ No hay usuario autenticado"
+            );
+
+
+            setUser(null);
+
+            setCargandoUsuario(false);
+
+            setCargandoPerfil(false);
+
+            return;
+
+          }
+
+
+
+          console.log(
+            "✅ Usuario autenticado:",
+            usuario.uid
+          );
+
+
+          console.log(
+            "📧 Email:",
+            usuario.email
+          );
+
+
+          setUser(usuario);
+
+          setCargandoUsuario(false);
+
+
+
+          // =================================================
+          // BUSCAR PERFIL EXISTENTE
+          // =================================================
+
+          try {
+
+
+            const perfil =
+              await getUserProfile(
+                usuario.uid
+              );
+
+
+
+            if (perfil) {
+
+
+              console.log(
+                "✅ Perfil encontrado en Firestore"
+              );
+
+
+
+              // ---------------------------------------------
+              // CARGAR DATOS EXISTENTES
+              // ---------------------------------------------
+
+              setNombre(
+                perfil.nombre || ""
+              );
+
+
+              setEdad(
+                perfil.edad || ""
+              );
+
+
+              setGenero(
+                perfil.genero || ""
+              );
+
+
+              setBusca(
+                perfil.busca || ""
+              );
+
+
+              setFotoExistente(
+                perfil.foto || ""
+              );
+
+
+              setFotosExistentes(
+                perfil.fotos || []
+              );
+
+
+
+              // ---------------------------------------------
+              // PREVIEW DE FOTO EXISTENTE
+              // ---------------------------------------------
+
+              if (perfil.foto) {
+
+                setPreview(
+                  perfil.foto
+                );
+
+              }
+
+
+
+              // ---------------------------------------------
+              // PREVIEW DE FOTOS EXTRA
+              // ---------------------------------------------
+
+              if (
+                perfil.fotos &&
+                perfil.fotos.length > 0
+              ) {
+
+                setPreviewExtras(
+                  perfil.fotos
+                );
+
+              }
+
+
+
+              console.log(
+                "👤 Nombre:",
+                perfil.nombre
+              );
+
+
+              console.log(
+                "📷 Foto:",
+                perfil.foto
+                  ? "Sí"
+                  : "No"
+              );
+
+
+              console.log(
+                "📋 Perfil completo:",
+                perfil.perfilCompleto
+              );
+
+            }
+            else {
+
+              console.log(
+                "ℹ️ No existe perfil en Firestore"
+              );
+
+            }
+
+
+          } catch (error) {
+
+
+            console.error(
+              "❌ Error cargando perfil:",
+              error
+            );
+
+
+          } finally {
+
+
+            setCargandoPerfil(
+              false
+            );
+
+
+          }
+
+        }
+      );
+
+
+    return () =>
+      unsubscribe();
+
+
+  }, []);
+
+
+
+
+
+  // =====================================================
+  // SELECCIONAR FOTO PRINCIPAL
+  // =====================================================
 
   function seleccionarFoto(
-    e:React.ChangeEvent<HTMLInputElement>
-  ){
+
+    e: React.ChangeEvent<HTMLInputElement>
+
+  ) {
 
 
     const archivo =
       e.target.files?.[0];
 
 
-    if(!archivo) return;
+    if (!archivo) {
+
+      return;
+
+    }
 
 
-    setFoto(archivo);
+    setFoto(
+      archivo
+    );
 
 
     setPreview(
-      URL.createObjectURL(archivo)
+      URL.createObjectURL(
+        archivo
+      )
     );
-
 
   }
 
@@ -95,12 +394,15 @@ export default function CrearPerfil(){
 
 
 
-
-
+  // =====================================================
+  // SELECCIONAR FOTOS EXTRA
+  // =====================================================
 
   function seleccionarFotosExtra(
-    e:React.ChangeEvent<HTMLInputElement>
-  ){
+
+    e: React.ChangeEvent<HTMLInputElement>
+
+  ) {
 
 
     const archivos =
@@ -116,18 +418,21 @@ export default function CrearPerfil(){
       );
 
 
-    setFotosExtra(nuevas);
-
+    setFotosExtra(
+      nuevas
+    );
 
 
     setPreviewExtras(
 
-      nuevas.map((foto)=>
-        URL.createObjectURL(foto)
+      nuevas.map(
+        (archivo) =>
+          URL.createObjectURL(
+            archivo
+          )
       )
 
     );
-
 
   }
 
@@ -135,29 +440,29 @@ export default function CrearPerfil(){
 
 
 
-
-
-
+  // =====================================================
+  // SUBIR IMAGEN
+  // =====================================================
 
   async function subirImagen(
 
-    archivo:File,
+    archivo: File,
 
-    nombre:string,
+    nombreArchivo: string,
 
-    uid:string
+    uid: string
 
-  ){
+  ) {
 
 
-    const imagenRef = ref(
+    const imagenRef =
+      ref(
 
-      storage,
+        storage,
 
-      `usuarios/${uid}/${nombre}`
+        `usuarios/${uid}/${nombreArchivo}`
 
-    );
-
+      );
 
 
     await uploadBytes(
@@ -169,13 +474,11 @@ export default function CrearPerfil(){
     );
 
 
-
     return await getDownloadURL(
 
       imagenRef
 
     );
-
 
   }
 
@@ -183,129 +486,231 @@ export default function CrearPerfil(){
 
 
 
+  // =====================================================
+  // CREAR / ACTUALIZAR PERFIL
+  // =====================================================
+
+  async function crearPerfil() {
+
+
+    // ---------------------------------------------------
+    // VERIFICAR AUTH
+    // ---------------------------------------------------
+
+    if (!user) {
+
+
+      alert(
+        "Tu sesión no está iniciada. Volvé a ingresar."
+      );
+
+
+      router.push(
+        eventoId
+          ? `/login?evento=${eventoId}`
+          : "/login"
+      );
+
+
+      return;
+
+    }
 
 
 
+    // ---------------------------------------------------
+    // VERIFICAR DATOS
+    // ---------------------------------------------------
 
-  async function crearPerfil(){
+    if (
 
-
-
-    if(
-      !nombre ||
+      !nombre.trim() ||
       !edad ||
       !genero ||
       !busca
-    ){
+
+    ) {
+
 
       alert(
         "Completá todos los datos"
       );
 
+
       return;
 
     }
 
 
 
+    // ---------------------------------------------------
+    // FOTO
+    //
+    // Puede ser una foto nueva o una existente.
+    // ---------------------------------------------------
 
+    if (
+      !foto &&
+      !fotoExistente
+    ) {
 
-    if(!foto){
 
       alert(
         "La foto de perfil es obligatoria"
       );
 
+
       return;
 
     }
 
 
 
+    // ---------------------------------------------------
+    // EVENTO
+    // ---------------------------------------------------
+
+    if (!eventoId) {
 
 
-    setGuardando(true);
+      alert(
+        "No se encontró el ID del evento."
+      );
+
+
+      return;
+
+    }
 
 
 
-
-    try{
-
-
-
-      const user =
-        await loginAnonymous();
+    setGuardando(
+      true
+    );
 
 
 
+    try {
 
-      if(!user){
 
-        throw new Error(
-          "No se pudo crear usuario"
+      console.log(
+        "🚀 Actualizando perfil:"
+      );
+
+
+      console.log(
+        "UID:",
+        user.uid
+      );
+
+
+      console.log(
+        "Nombre:",
+        nombre
+      );
+
+
+
+      // =================================================
+      // FOTO PRINCIPAL
+      // =================================================
+
+      let urlPrincipal =
+        fotoExistente;
+
+
+
+      if (foto) {
+
+
+        console.log(
+          "📷 Subiendo nueva foto principal..."
         );
 
-      }
 
-
-
-
-
-
-
-      const urlPrincipal =
-        await subirImagen(
-
-          foto,
-
-          "perfil.jpg",
-
-          user.uid
-
-        );
-
-
-
-
-
-
-
-      const urlsExtras:string[] = [];
-
-
-
-
-      for(
-        let i = 0;
-        i < fotosExtra.length;
-        i++
-      ){
-
-
-        const url =
+        urlPrincipal =
           await subirImagen(
 
-            fotosExtra[i],
+            foto,
 
-            `foto${i+2}.jpg`,
+            "perfil.jpg",
 
             user.uid
 
           );
 
 
-        urlsExtras.push(url);
-
+        console.log(
+          "✅ Foto principal subida"
+        );
 
       }
 
 
 
+      // =================================================
+      // FOTOS EXTRA
+      // =================================================
+
+      let urlsExtras =
+        fotosExistentes;
 
 
 
+      if (
+        fotosExtra.length > 0
+      ) {
 
 
+        console.log(
+          "📸 Subiendo fotos adicionales..."
+        );
+
+
+        urlsExtras = [];
+
+
+        for (
+
+          let i = 0;
+
+          i < fotosExtra.length;
+
+          i++
+
+        ) {
+
+
+          const url =
+            await subirImagen(
+
+              fotosExtra[i],
+
+              `foto${i + 2}.jpg`,
+
+              user.uid
+
+            );
+
+
+          urlsExtras.push(
+            url
+          );
+
+        }
+
+
+        console.log(
+          "✅ Fotos adicionales subidas"
+        );
+
+      }
+
+
+
+      // =================================================
+      // ACTUALIZAR FIRESTORE
+      // =================================================
 
       await updateUserProfile(
 
@@ -313,24 +718,26 @@ export default function CrearPerfil(){
 
         {
 
+          nombre:
+            nombre.trim(),
 
-          nombre,
+          edad:
+            edad,
 
-          edad,
+          genero:
+            genero,
 
-          genero,
+          busca:
+            busca,
 
-          busca,
+          foto:
+            urlPrincipal,
 
+          fotos:
+            urlsExtras,
 
-          foto:urlPrincipal,
-
-
-          fotos:urlsExtras,
-
-
-          intereses:[]
-
+          intereses:
+            []
 
         }
 
@@ -338,23 +745,15 @@ export default function CrearPerfil(){
 
 
 
+      console.log(
+        "✅ Perfil actualizado correctamente"
+      );
 
 
 
-
-
-      if(!eventoId){
-
-        throw new Error(
-          "No llegó el ID del evento"
-        );
-
-      }
-
-
-
-
-
+      // =================================================
+      // UNIR AL EVENTO
+      // =================================================
 
       await joinEvent(
 
@@ -366,8 +765,15 @@ export default function CrearPerfil(){
 
 
 
+      console.log(
+        "🎉 Usuario unido al evento"
+      );
 
 
+
+      // =================================================
+      // ENTRAR AL EVENTO
+      // =================================================
 
       router.push(
 
@@ -376,33 +782,32 @@ export default function CrearPerfil(){
       );
 
 
-
-
-
-    }catch(error:any){
-
+    } catch (error: any) {
 
 
       console.error(
+        "❌ Error actualizando perfil:",
         error
       );
 
 
       alert(
+
         error.message ||
-        "Error creando perfil"
+        "Error actualizando perfil"
+
       );
 
 
+    } finally {
 
-    }finally{
 
-
-      setGuardando(false);
+      setGuardando(
+        false
+      );
 
 
     }
-
 
   }
 
@@ -410,87 +815,261 @@ export default function CrearPerfil(){
 
 
 
+  // =====================================================
+  // CARGANDO
+  // =====================================================
+
+  if (
+    cargandoUsuario ||
+    cargandoPerfil
+  ) {
+
+
+    return (
+
+      <main
+        className="
+          min-h-screen
+          bg-slate-900
+          flex
+          items-center
+          justify-center
+          text-white
+        "
+      >
+
+        <div
+          className="
+            text-center
+          "
+        >
+
+          <div
+            className="
+              text-5xl
+              mb-4
+            "
+          >
+            🎉
+          </div>
+
+
+          <p>
+            Cargando tu perfil...
+          </p>
+
+        </div>
+
+      </main>
+
+    );
+
+  }
 
 
 
+
+
+  // =====================================================
+  // SIN SESIÓN
+  // =====================================================
+
+  if (!user) {
+
+
+    return (
+
+      <main
+        className="
+          min-h-screen
+          bg-slate-900
+          flex
+          items-center
+          justify-center
+          p-6
+        "
+      >
+
+        <div
+          className="
+            bg-white
+            rounded-3xl
+            shadow-xl
+            p-8
+            w-full
+            max-w-md
+            text-center
+          "
+        >
+
+          <div
+            className="
+              text-5xl
+              mb-4
+            "
+          >
+            🔐
+          </div>
+
+
+          <h1
+            className="
+              text-2xl
+              font-bold
+              text-black
+              mb-3
+            "
+          >
+            Necesitás iniciar sesión
+          </h1>
+
+
+          <p
+            className="
+              text-gray-600
+              mb-6
+            "
+          >
+            Ingresá con tu usuario y contraseña
+            para continuar.
+          </p>
+
+
+          <button
+            onClick={() =>
+              router.push(
+                eventoId
+                  ? `/login?evento=${eventoId}`
+                  : "/login"
+              )
+            }
+            className="
+              w-full
+              bg-purple-600
+              hover:bg-purple-700
+              text-white
+              py-3
+              rounded-xl
+              font-bold
+            "
+          >
+            🔐 Ir a iniciar sesión
+          </button>
+
+        </div>
+
+      </main>
+
+    );
+
+  }
+
+
+
+
+
+  // =====================================================
+  // FORMULARIO
+  // =====================================================
 
   return (
 
-    <main className="
-      min-h-screen
-      bg-slate-900
-      flex
-      items-center
-      justify-center
-      p-6
-    ">
+    <main
+      className="
+        min-h-screen
+        bg-slate-900
+        flex
+        items-center
+        justify-center
+        p-6
+      "
+    >
+
+      <div
+        className="
+          bg-white
+          rounded-3xl
+          shadow-xl
+          p-8
+          w-full
+          max-w-md
+        "
+      >
 
 
-      <div className="
-        bg-white
-        rounded-3xl
-        shadow-xl
-        p-8
-        w-full
-        max-w-md
-      ">
-
-
-
-        <h1 className="
-          text-3xl
-          font-bold
-          text-black
-          text-center
-        ">
-
-          Crear perfil 🎉
-
+        <h1
+          className="
+            text-3xl
+            font-bold
+            text-black
+            text-center
+          "
+        >
+          {fotoExistente
+            ? "Tu perfil 🎉"
+            : "Crear perfil 🎉"
+          }
         </h1>
 
 
+        <p
+          className="
+            text-gray-500
+            text-center
+            mt-2
+          "
+        >
+          Completá tus datos para participar.
+        </p>
 
 
 
+        {/* =================================================
+            FOTO PRINCIPAL
+        ================================================= */}
 
-        {
-          preview && (
+        {preview && (
 
-            <img
+          <img
 
-              src={preview}
+            src={preview}
 
-              className="
-                w-32
-                h-32
-                rounded-full
-                object-cover
-                mx-auto
-                mt-6
-              "
+            alt="Foto de perfil"
 
-            />
+            className="
+              w-32
+              h-32
+              rounded-full
+              object-cover
+              mx-auto
+              mt-6
+            "
 
-          )
-        }
+          />
 
-
+        )}
 
 
 
+        <label
+          className="
+            block
+            mt-6
+            text-center
+            bg-black
+            text-white
+            py-3
+            rounded-xl
+            cursor-pointer
+            hover:bg-gray-800
+          "
+        >
 
-        <label className="
-          block
-          mt-6
-          text-center
-          bg-black
-          text-white
-          py-3
-          rounded-xl
-          cursor-pointer
-        ">
-
-          📷 Foto principal
+          📷
+          {fotoExistente
+            ? " Cambiar foto principal"
+            : " Foto principal"
+          }
 
 
           <input
@@ -499,33 +1078,35 @@ export default function CrearPerfil(){
 
             accept="image/*"
 
-            onChange={seleccionarFoto}
+            onChange={
+              seleccionarFoto
+            }
 
             className="hidden"
 
           />
 
-
         </label>
 
 
 
+        {/* =================================================
+            FOTOS EXTRA
+        ================================================= */}
 
-
-
-
-
-        <label className="
-          block
-          mt-4
-          text-center
-          bg-purple-600
-          text-white
-          py-3
-          rounded-xl
-          cursor-pointer
-        ">
-
+        <label
+          className="
+            block
+            mt-4
+            text-center
+            bg-purple-600
+            hover:bg-purple-700
+            text-white
+            py-3
+            rounded-xl
+            cursor-pointer
+          "
+        >
 
           📸 Agregar hasta 3 fotos más
 
@@ -538,72 +1119,74 @@ export default function CrearPerfil(){
 
             multiple
 
-            onChange={seleccionarFotosExtra}
+            onChange={
+              seleccionarFotosExtra
+            }
 
             className="hidden"
 
           />
 
-
         </label>
 
 
 
+        {previewExtras.length > 0 && (
 
-
-
-        {
-          previewExtras.length > 0 && (
-
-            <div className="
+          <div
+            className="
               flex
               gap-2
               mt-4
               justify-center
-            ">
+              flex-wrap
+            "
+          >
 
+            {previewExtras.map(
 
-              {
-                previewExtras.map((foto,i)=>(
+              (imagen, i) => (
 
-                  <img
+                <img
 
-                    key={i}
+                  key={i}
 
-                    src={foto}
+                  src={imagen}
 
-                    className="
-                      w-20
-                      h-20
-                      rounded-xl
-                      object-cover
-                    "
+                  alt={`Foto ${i + 2}`}
 
-                  />
+                  className="
+                    w-20
+                    h-20
+                    rounded-xl
+                    object-cover
+                  "
 
-                ))
+                />
 
-              }
+              )
 
+            )}
 
-            </div>
+          </div>
 
-          )
-
-        }
-
-
-
-
+        )}
 
 
 
+        {/* =================================================
+            NOMBRE
+        ================================================= */}
 
         <input
 
           value={nombre}
 
-          onChange={(e)=>setNombre(e.target.value)}
+          onChange={(e) =>
+            setNombre(
+              e.target.value
+            )
+          }
 
           placeholder="Tu nombre"
 
@@ -611,48 +1194,65 @@ export default function CrearPerfil(){
             w-full
             mt-6
             border
+            border-gray-300
             rounded-xl
             p-3
             text-black
+            bg-white
           "
 
         />
 
 
 
-
+        {/* =================================================
+            EDAD
+        ================================================= */}
 
         <input
 
           value={edad}
 
-          onChange={(e)=>setEdad(e.target.value)}
+          onChange={(e) =>
+            setEdad(
+              e.target.value
+            )
+          }
 
           placeholder="Edad"
 
           type="number"
 
+          min="18"
+
           className="
             w-full
             mt-4
             border
+            border-gray-300
             rounded-xl
             p-3
             text-black
+            bg-white
           "
 
         />
 
 
 
-
-
+        {/* =================================================
+            GÉNERO
+        ================================================= */}
 
         <select
 
           value={genero}
 
-          onChange={(e)=>setGenero(e.target.value)}
+          onChange={(e) =>
+            setGenero(
+              e.target.value
+            )
+          }
 
           className="
             w-full
@@ -682,14 +1282,19 @@ export default function CrearPerfil(){
 
 
 
-
-
+        {/* =================================================
+            BUSCA
+        ================================================= */}
 
         <select
 
           value={busca}
 
-          onChange={(e)=>setBusca(e.target.value)}
+          onChange={(e) =>
+            setBusca(
+              e.target.value
+            )
+          }
 
           className="
             w-full
@@ -723,21 +1328,26 @@ export default function CrearPerfil(){
 
 
 
-
-
-
-
+        {/* =================================================
+            BOTÓN
+        ================================================= */}
 
         <button
 
-          onClick={crearPerfil}
+          onClick={
+            crearPerfil
+          }
 
-          disabled={guardando}
+          disabled={
+            guardando
+          }
 
           className="
             w-full
             mt-6
             bg-purple-600
+            hover:bg-purple-700
+            disabled:bg-gray-400
             text-white
             py-3
             rounded-xl
@@ -746,26 +1356,18 @@ export default function CrearPerfil(){
 
         >
 
-          {
-            guardando
-            ?
-            "Creando..."
-            :
-            "Entrar a la fiesta 🎉"
+          {guardando
+            ? "Guardando..."
+            : "Entrar a la fiesta 🎉"
           }
-
 
         </button>
 
 
-
-
       </div>
-
 
     </main>
 
   );
-
 
 }

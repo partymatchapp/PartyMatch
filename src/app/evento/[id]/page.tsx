@@ -7,7 +7,7 @@ import {
   collection,
   query,
   where,
-  onSnapshot
+  onSnapshot,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -17,14 +17,12 @@ import { useUser } from "@/context/UserContext";
 import { getEvent } from "@/lib/events";
 
 import {
-  joinEvent,
-  getUserProfile
+  getUserProfile,
 } from "@/lib/users";
 
 import {
-  getUnreadNotificationsCount
+  getUnreadNotificationsCount,
 } from "@/lib/notifications";
-
 
 import Discovery from "@/components/Discovery";
 import EventLobby from "@/components/EventLobby";
@@ -32,9 +30,6 @@ import Notifications from "@/components/Notifications";
 import Matches from "@/components/Matches";
 import Chats from "@/components/Chats";
 import MiPerfil from "@/components/MiPerfil";
-
-
-
 
 
 type Vista =
@@ -46,14 +41,7 @@ type Vista =
   | "perfil";
 
 
-
-
-
-
-
-
-export default function EventoPage(){
-
+export default function EventoPage() {
 
   const params = useParams();
 
@@ -61,163 +49,199 @@ export default function EventoPage(){
 
   const searchParams = useSearchParams();
 
-
   const id = params.id as string;
 
 
   const {
     user,
-    loading
+    loading,
   } = useUser();
 
 
+  const [evento, setEvento] = useState<any>(null);
+
+  const [cargandoEvento, setCargandoEvento] = useState(true);
+
+  const [verificandoUsuario, setVerificandoUsuario] = useState(true);
+
+  const [error, setError] = useState("");
 
 
+  const [vista, setVista] = useState<Vista>(() => {
+
+    const vistaUrl = searchParams.get("vista");
+
+    if (
+      vistaUrl === "chats" ||
+      vistaUrl === "matches" ||
+      vistaUrl === "notificaciones" ||
+      vistaUrl === "participantes" ||
+      vistaUrl === "discovery" ||
+      vistaUrl === "perfil"
+    ) {
+
+      return vistaUrl;
+
+    }
+
+    return "discovery";
+
+  });
 
 
-  const [evento,setEvento] =
-    useState<any>(null);
+  const [notificaciones, setNotificaciones] = useState(0);
+
+  const [chatsNoLeidos, setChatsNoLeidos] = useState(0);
 
 
-  const [cargando,setCargando] =
-    useState(true);
+  // ======================================================
+  // CARGAR EVENTO
+  // ======================================================
 
+  useEffect(() => {
 
-  const [error,setError] =
-    useState("");
+    if (!id) {
 
+      setError(
+        "Evento inválido"
+      );
 
-
-
-
-  const [vista,setVista] =
-    useState<Vista>(()=>{
-
-
-      const vistaUrl =
-        searchParams.get("vista");
-
-
-
-      if(
-        vistaUrl === "chats" ||
-        vistaUrl === "matches" ||
-        vistaUrl === "notificaciones" ||
-        vistaUrl === "participantes" ||
-        vistaUrl === "discovery" ||
-        vistaUrl === "perfil"
-      ){
-
-        return vistaUrl;
-
-      }
-
-
-      return "discovery";
-
-
-    });
-
-
-
-
-
-  const [notificaciones,setNotificaciones] =
-    useState(0);
-
-
-
-  const [chatsNoLeidos,setChatsNoLeidos] =
-    useState(0);
-
-
-
-
-
-
-
-
-  async function cargarNotificaciones(){
-
-
-    if(!user){
+      setCargandoEvento(false);
 
       return;
 
     }
 
 
-    const cantidad =
-      await getUnreadNotificationsCount(
-        user.uid
-      );
+    let activo = true;
 
 
-    setNotificaciones(cantidad);
+    async function cargarEvento() {
+
+      try {
+
+        console.log(
+          "⏳ Cargando evento:",
+          id
+        );
 
 
-  }
+        const datos = await getEvent(
+          id
+        );
 
 
+        console.log(
+          "📦 Resultado evento:",
+          datos
+        );
 
 
-
-
-
-
-
-  useEffect(()=>{
-
-
-    async function iniciar(){
-
-
-      try{
-
-
-        if(!id){
-
-          throw new Error(
-            "Evento inválido"
-          );
-
+        if (!activo) {
+          return;
         }
 
 
+        if (!datos) {
 
-
-
-        const datos =
-          await getEvent(id);
-
-
-
-        if(!datos){
-
-          throw new Error(
+          setError(
             "Evento no encontrado"
           );
 
-        }
-
-
-
-        setEvento(datos);
-
-
-
-
-
-        if(loading){
+          setEvento(null);
 
           return;
 
         }
 
 
+        setEvento(
+          datos
+        );
+
+        setError("");
 
 
-        if(!user){
+        console.log(
+          "✅ Evento cargado correctamente"
+        );
+
+
+      } catch (error: any) {
+
+        console.error(
+          "❌ Error cargando evento:",
+          error
+        );
+
+
+        if (activo) {
+
+          setError(
+            error?.message ||
+            "No se pudo cargar el evento"
+          );
+
+        }
+
+      } finally {
+
+        if (activo) {
+
+          setCargandoEvento(false);
+
+        }
+
+      }
+
+    }
+
+
+    cargarEvento();
+
+
+    return () => {
+
+      activo = false;
+
+    };
+
+  }, [id]);
+
+
+  // ======================================================
+  // AUTENTICACIÓN Y PERFIL
+  // ======================================================
+
+  useEffect(() => {
+
+    if (loading) {
+      return;
+    }
+
+
+    if (!id) {
+      return;
+    }
+
+
+    let activo = true;
+
+
+    async function verificarUsuario() {
+
+      try {
+
+        console.log(
+          "🔐 Verificando usuario..."
+        );
+
+
+        if (!user) {
+
+          console.log(
+            "⚠️ No hay usuario autenticado"
+          );
 
 
           router.push(
@@ -230,8 +254,10 @@ export default function EventoPage(){
         }
 
 
-
-
+        console.log(
+          "✅ Usuario autenticado:",
+          user.uid
+        );
 
 
         const perfil =
@@ -240,13 +266,17 @@ export default function EventoPage(){
           );
 
 
+        console.log(
+          "👤 Perfil:",
+          perfil
+        );
 
 
+        if (!perfil) {
 
-        if(
-          !perfil ||
-          !perfil.perfilCompleto
-        ){
+          console.log(
+            "⚠️ No existe el perfil"
+          );
 
 
           router.push(
@@ -256,93 +286,171 @@ export default function EventoPage(){
 
           return;
 
+        }
+
+
+        if (!perfil.perfilCompleto) {
+
+          console.log(
+            "⚠️ Perfil incompleto"
+          );
+
+
+          router.push(
+            `/crear-perfil?evento=${id}`
+          );
+
+
+          return;
 
         }
 
 
+        console.log(
+          "✅ Perfil completo"
+        );
 
 
+        // ==================================================
+        // IMPORTANTE
+        //
+        // NO hacemos joinEvent() acá.
+        //
+        // Antes el usuario era agregado automáticamente
+        // cada vez que abría /evento/[id].
+        //
+        // Eso hacía que un participante eliminado por el
+        // administrador volviera a aparecer.
+        // ==================================================
 
 
-        await joinEvent(
-          user.uid,
+        console.log(
+          "📌 eventoId actual del usuario:",
+          perfil.eventoId
+        );
+
+
+        if (
+          perfil.eventoId !== id
+        ) {
+
+          console.log(
+            "⚠️ El usuario no pertenece actualmente a este evento"
+          );
+
+
+          setError(
+            "No estás participando actualmente de este evento."
+          );
+
+
+          return;
+
+        }
+
+
+        console.log(
+          "🎉 Usuario pertenece al evento:",
           id
         );
 
 
+        // ==================================================
+        // NOTIFICACIONES
+        // ==================================================
+
+        try {
+
+          const cantidad =
+            await getUnreadNotificationsCount(
+              user.uid
+            );
 
 
+          if (activo) {
 
-        await cargarNotificaciones();
+            setNotificaciones(
+              cantidad
+            );
 
-
-
-
-
-      }catch(error:any){
-
-
-        console.error(error);
+          }
 
 
-        setError(
-          error.message
+        } catch (error) {
+
+          console.error(
+            "⚠️ Error cargando notificaciones:",
+            error
+          );
+
+        }
+
+
+      } catch (error: any) {
+
+        console.error(
+          "❌ Error verificando usuario:",
+          error
         );
 
 
-      }finally{
+        if (activo) {
 
+          setError(
+            error?.message ||
+            "No se pudo verificar el usuario"
+          );
 
-        setCargando(false);
+        }
 
+      } finally {
+
+        if (activo) {
+
+          setVerificandoUsuario(false);
+
+        }
 
       }
 
-
     }
 
 
+    verificarUsuario();
 
 
+    return () => {
 
-    iniciar();
+      activo = false;
+
+    };
 
 
-
-  },[
+  }, [
     id,
     user,
-    loading
+    loading,
+    router
   ]);
 
 
+  // ======================================================
+  // CHAT - MENSAJES NO LEÍDOS
+  // ======================================================
 
+  useEffect(() => {
 
-
-
-
-
-  useEffect(()=>{
-
-
-    if(!user){
-
+    if (!user) {
       return;
-
     }
 
 
-
-
-
     const chatsQuery = query(
-
 
       collection(
         db,
         "chats"
       ),
-
 
       where(
         "usuarios",
@@ -350,70 +458,249 @@ export default function EventoPage(){
         user.uid
       )
 
-
     );
-
-
-
-
-
-
 
 
     const cancelar = onSnapshot(
 
-
       chatsQuery,
 
-
-      snapshot=>{
-
+      (snapshot) => {
 
         let total = 0;
 
 
+        snapshot.forEach((doc) => {
 
-        snapshot.forEach(doc=>{
-
-
-          const data:any =
+          const data: any =
             doc.data();
-
 
 
           total +=
             data.noLeidos?.[user.uid] || 0;
 
-
-
         });
 
 
+        setChatsNoLeidos(
+          total
+        );
 
+      },
 
-        setChatsNoLeidos(total);
+      (error) => {
 
-
+        console.error(
+          "❌ Error escuchando chats:",
+          error
+        );
 
       }
 
-
     );
 
 
+    return () => {
+
+      cancelar();
+
+    };
+
+  }, [user]);
 
 
+  // ======================================================
+  // CARGANDO AUTENTICACIÓN
+  // ======================================================
 
-    return ()=>cancelar();
+  if (loading) {
+
+    return (
+
+      <div className="
+        min-h-screen
+        bg-black
+        text-white
+        flex
+        flex-col
+        items-center
+        justify-center
+        gap-4
+      ">
+
+        <div className="text-4xl">
+          🎉
+        </div>
+
+        <div>
+          Verificando usuario...
+        </div>
+
+      </div>
+
+    );
+
+  }
 
 
+  // ======================================================
+  // CARGANDO EVENTO
+  // ======================================================
 
-  },[user]);  if(
-    cargando ||
-    loading
-  ){
+  if (cargandoEvento) {
 
-    return(
+    return (
+
+      <div className="
+        min-h-screen
+        bg-black
+        text-white
+        flex
+        flex-col
+        items-center
+        justify-center
+        gap-4
+      ">
+
+        <div className="text-4xl">
+          🎉
+        </div>
+
+        <div>
+          Cargando evento...
+        </div>
+
+        <div className="
+          text-xs
+          text-gray-500
+        ">
+
+          ID: {id}
+
+        </div>
+
+      </div>
+
+    );
+
+  }
+
+
+  // ======================================================
+  // VERIFICANDO USUARIO
+  // ======================================================
+
+  if (verificandoUsuario) {
+
+    return (
+
+      <div className="
+        min-h-screen
+        bg-black
+        text-white
+        flex
+        flex-col
+        items-center
+        justify-center
+        gap-4
+      ">
+
+        <div className="text-4xl">
+          🎉
+        </div>
+
+        <div>
+          Verificando participación...
+        </div>
+
+      </div>
+
+    );
+
+  }
+
+
+  // ======================================================
+  // ERROR
+  // ======================================================
+
+  if (error) {
+
+    return (
+
+      <div className="
+        min-h-screen
+        bg-black
+        text-white
+        flex
+        flex-col
+        items-center
+        justify-center
+        p-6
+        text-center
+      ">
+
+        <div className="text-5xl mb-4">
+          ⚠️
+        </div>
+
+
+        <h1 className="
+          text-2xl
+          font-bold
+          mb-3
+        ">
+
+          No se pudo acceder al evento
+
+        </h1>
+
+
+        <p className="
+          text-gray-400
+          mb-6
+        ">
+
+          {error}
+
+        </p>
+
+
+        <button
+
+          onClick={() =>
+            router.push("/")
+          }
+
+          className="
+            bg-purple-600
+            hover:bg-purple-700
+            px-6
+            py-3
+            rounded-xl
+            font-bold
+          "
+
+        >
+
+          Volver al inicio
+
+        </button>
+
+      </div>
+
+    );
+
+  }
+
+
+  // ======================================================
+  // EVENTO NO ENCONTRADO
+  // ======================================================
+
+  if (!evento) {
+
+    return (
 
       <div className="
         min-h-screen
@@ -424,7 +711,7 @@ export default function EventoPage(){
         justify-center
       ">
 
-        Cargando evento...
+        Evento no encontrado
 
       </div>
 
@@ -433,52 +720,11 @@ export default function EventoPage(){
   }
 
 
+  // ======================================================
+  // PÁGINA PRINCIPAL
+  // ======================================================
 
-
-
-
-  if(error){
-
-
-    return(
-
-      <div className="
-        min-h-screen
-        bg-black
-        text-white
-        flex
-        items-center
-        justify-center
-      ">
-
-        {error}
-
-      </div>
-
-    );
-
-  }
-
-
-
-
-
-
-
-  if(!evento){
-
-    return null;
-
-  }
-
-
-
-
-
-
-
-
-  return(
+  return (
 
     <main className="
       min-h-screen
@@ -488,12 +734,10 @@ export default function EventoPage(){
     ">
 
 
-
       <header className="
         p-5
         text-center
       ">
-
 
         <h1 className="
           text-3xl
@@ -504,13 +748,7 @@ export default function EventoPage(){
 
         </h1>
 
-
       </header>
-
-
-
-
-
 
 
       <section className="
@@ -520,108 +758,57 @@ export default function EventoPage(){
       ">
 
 
+        {vista === "discovery" && (
+
+          <Discovery
+            eventoId={id}
+          />
+
+        )}
 
 
+        {vista === "participantes" && (
 
-        {
-          vista==="discovery" && (
+          <EventLobby
+            eventoId={id}
+          />
 
-            <Discovery
-              eventoId={id}
-            />
-
-          )
-        }
+        )}
 
 
+        {vista === "notificaciones" && (
+
+          <Notifications />
+
+        )}
 
 
+        {vista === "matches" && (
+
+          <Matches />
+
+        )}
 
 
+        {vista === "chats" && (
 
-        {
-          vista==="participantes" && (
+          <Chats
+            onUnreadChange={
+              setChatsNoLeidos
+            }
+          />
 
-            <EventLobby
-              eventoId={id}
-            />
-
-          )
-        }
-
+        )}
 
 
+        {vista === "perfil" && (
 
+          <MiPerfil />
 
-
-
-        {
-          vista==="notificaciones" && (
-
-            <Notifications/>
-
-          )
-        }
-
-
-
-
-
-
-
-        {
-          vista==="matches" && (
-
-            <Matches/>
-
-          )
-        }
-
-
-
-
-
-
-
-        {
-          vista==="chats" && (
-
-            <Chats
-              onUnreadChange={setChatsNoLeidos}
-            />
-
-          )
-        }
-
-
-
-
-
-
-
-        {
-          vista==="perfil" && (
-
-            <MiPerfil/>
-
-          )
-        }
-
-
-
-
+        )}
 
 
       </section>
-
-
-
-
-
-
-
-
-
 
 
       <nav className="
@@ -637,7 +824,6 @@ export default function EventoPage(){
       ">
 
 
-
         <div className="
           max-w-md
           mx-auto
@@ -647,12 +833,11 @@ export default function EventoPage(){
         ">
 
 
-
-
-
           <button
 
-            onClick={()=>setVista("discovery")}
+            onClick={() =>
+              setVista("discovery")
+            }
 
             className="
               flex
@@ -672,14 +857,11 @@ export default function EventoPage(){
           </button>
 
 
-
-
-
-
-
           <button
 
-            onClick={()=>setVista("participantes")}
+            onClick={() =>
+              setVista("participantes")
+            }
 
             className="
               flex
@@ -699,14 +881,11 @@ export default function EventoPage(){
           </button>
 
 
-
-
-
-
-
           <button
 
-            onClick={()=>setVista("notificaciones")}
+            onClick={() =>
+              setVista("notificaciones")
+            }
 
             className="
               relative
@@ -721,46 +900,36 @@ export default function EventoPage(){
             🔔
 
 
+            {notificaciones > 0 && (
 
-            {
-              notificaciones > 0 && (
+              <span className="
+                absolute
+                -top-2
+                bg-red-500
+                rounded-full
+                px-2
+                text-xs
+              ">
 
-                <span className="
-                  absolute
-                  -top-2
-                  bg-red-500
-                  rounded-full
-                  px-2
-                  text-xs
-                ">
+                {notificaciones}
 
-                  {notificaciones}
+              </span>
 
-                </span>
-
-              )
-
-            }
-
+            )}
 
 
             <span>
               Avisos
             </span>
 
-
           </button>
-
-
-
-
-
-
 
 
           <button
 
-            onClick={()=>setVista("matches")}
+            onClick={() =>
+              setVista("matches")
+            }
 
             className="
               flex
@@ -780,16 +949,11 @@ export default function EventoPage(){
           </button>
 
 
-
-
-
-
-
-
-
           <button
 
-            onClick={()=>setVista("chats")}
+            onClick={() =>
+              setVista("chats")
+            }
 
             className="
               relative
@@ -804,47 +968,36 @@ export default function EventoPage(){
             💬
 
 
+            {chatsNoLeidos > 0 && (
 
-            {
-              chatsNoLeidos > 0 && (
+              <span className="
+                absolute
+                -top-2
+                bg-red-500
+                rounded-full
+                px-2
+                text-xs
+              ">
 
-                <span className="
-                  absolute
-                  -top-2
-                  bg-red-500
-                  rounded-full
-                  px-2
-                  text-xs
-                ">
+                {chatsNoLeidos}
 
-                  {chatsNoLeidos}
+              </span>
 
-                </span>
-
-              )
-
-            }
-
+            )}
 
 
             <span>
               Chat
             </span>
 
-
           </button>
-
-
-
-
-
-
-
 
 
           <button
 
-            onClick={()=>setVista("perfil")}
+            onClick={() =>
+              setVista("perfil")
+            }
 
             className="
               flex
@@ -864,21 +1017,13 @@ export default function EventoPage(){
           </button>
 
 
-
-
-
-
-
         </div>
 
-
       </nav>
-
 
 
     </main>
 
   );
-
 
 }

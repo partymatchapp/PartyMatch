@@ -1,7 +1,7 @@
-import { 
-  doc, 
-  setDoc, 
-  getDoc 
+import {
+  doc,
+  setDoc,
+  getDoc
 } from "firebase/firestore";
 
 import { db } from "./firebase";
@@ -10,27 +10,27 @@ import { db } from "./firebase";
 
 export interface UserProfile {
 
-  id:string;
+  id: string;
 
-  nombre?:string;
+  nombre?: string;
 
-  edad?:string;
+  edad?: string;
 
-  email?:string;
+  email?: string;
 
-  foto?:string;
+  foto?: string;
 
-  fotos?:string[];
+  fotos?: string[];
 
-  genero?:string;
+  genero?: string;
 
-  busca?:string;
+  busca?: string;
 
-  intereses?:string[];
+  intereses?: string[];
 
-  eventoId?:string;
+  eventoId?: string | null;
 
-  perfilCompleto?:boolean;
+  perfilCompleto?: boolean;
 
 }
 
@@ -38,15 +38,15 @@ export interface UserProfile {
 
 
 
-
+// ======================================================
+// CREAR PERFIL DE USUARIO
+// ======================================================
 
 export async function createUserProfile(
-  user:any
-){
+  user: any
+) {
 
-
-  try{
-
+  try {
 
     const userRef = doc(
       db,
@@ -54,72 +54,60 @@ export async function createUserProfile(
       user.uid
     );
 
-
     const snapshot = await getDoc(
       userRef
     );
 
-
-
-    if(!snapshot.exists()){
-
+    if (!snapshot.exists()) {
 
       await setDoc(
 
-
         userRef,
-
 
         {
 
-          nombre:user.displayName || "",
+          nombre: user.displayName || "",
 
-          email:user.email || "",
+          email: user.email || "",
 
-          foto:user.photoURL || "",
+          foto: user.photoURL || "",
 
-          fotos:[],
+          fotos: [],
 
-          edad:"",
+          edad: "",
 
-          genero:"",
+          genero: "",
 
-          busca:"",
+          busca: "",
 
-          intereses:[],
+          intereses: [],
 
-          perfilCompleto:false,
+          perfilCompleto: false,
 
-          creadoEn:new Date(),
+          eventoId: null,
+
+          creadoEn: new Date(),
 
         }
 
-
       );
-
 
       console.log(
         "✅ Usuario creado"
       );
 
-
     }
 
-
-  }catch(error:any){
-
+  } catch (error: any) {
 
     console.error(
       "❌ Error creando usuario:",
       error
     );
 
-
     throw error;
 
-
   }
-
 
 }
 
@@ -127,141 +115,98 @@ export async function createUserProfile(
 
 
 
-
-
-
+// ======================================================
+// ACTUALIZAR PERFIL
+// ======================================================
 
 export async function updateUserProfile(
 
-  uid:string,
+  uid: string,
 
-  data:{
+  data: {
 
-    nombre:string;
+    nombre: string;
 
-    edad:string;
+    edad: string;
 
-    foto:string;
+    foto: string;
 
-    fotos?:string[];
+    fotos?: string[];
 
-    genero:string;
+    genero: string;
 
-    busca:string;
+    busca: string;
 
-    intereses:string[];
+    intereses: string[];
 
   }
 
-){
+) {
 
+  try {
 
-  try{
-
-
-    if(!data.foto){
-
+    if (!data.foto) {
 
       throw new Error(
         "La foto de perfil es obligatoria"
       );
 
-
     }
 
-
-
-
-
     const userRef = doc(
-
       db,
-
       "usuarios",
-
       uid
-
     );
-
-
-
-
-
-
 
     await setDoc(
 
-
       userRef,
-
 
       {
 
+        nombre: data.nombre,
 
-        nombre:data.nombre,
+        edad: data.edad,
 
+        foto: data.foto,
 
-        edad:data.edad,
+        fotos: data.fotos || [],
 
+        genero: data.genero,
 
-        foto:data.foto,
+        busca: data.busca,
 
+        intereses: data.intereses,
 
-        fotos:data.fotos || [],
+        perfilCompleto: true,
 
-
-        genero:data.genero,
-
-
-        busca:data.busca,
-
-
-        intereses:data.intereses,
-
-
-
-        perfilCompleto:true,
-
-
-        actualizadoEn:new Date(),
-
+        actualizadoEn: new Date(),
 
       },
 
-
       {
 
-
-        merge:true
-
+        merge: true
 
       }
 
-
     );
-
-
 
     console.log(
       "✅ Perfil actualizado"
     );
 
-
-
-  }catch(error:any){
-
+  } catch (error: any) {
 
     console.error(
       "❌ Error actualizando perfil:",
       error
     );
 
-
     throw error;
 
-
   }
-
 
 }
 
@@ -269,74 +214,52 @@ export async function updateUserProfile(
 
 
 
-
-
-
+// ======================================================
+// OBTENER PERFIL
+// ======================================================
 
 export async function getUserProfile(
 
-  uid:string
+  uid: string
 
-):Promise<UserProfile|null>{
+): Promise<UserProfile | null> {
 
-
-  try{
-
+  try {
 
     const userRef = doc(
-
       db,
-
       "usuarios",
-
       uid
-
     );
-
 
     const snapshot = await getDoc(
       userRef
     );
 
-
-
-    if(snapshot.exists()){
-
+    if (snapshot.exists()) {
 
       return {
 
-
-        id:snapshot.id,
-
+        id: snapshot.id,
 
         ...snapshot.data()
 
-
       } as UserProfile;
-
 
     }
 
-
-
     return null;
 
-
-
-  }catch(error){
-
+  } catch (error) {
 
     console.error(
       "❌ Error obteniendo perfil:",
       error
     );
 
-
     return null;
 
-
   }
-
 
 }
 
@@ -344,80 +267,97 @@ export async function getUserProfile(
 
 
 
-
-
-
+// ======================================================
+// UNIR USUARIO A UN EVENTO
+//
+// IMPORTANTE:
+// Esta función NO debe ejecutarse automáticamente
+// desde la página del evento.
+//
+// Se utiliza solamente cuando realmente queremos
+// incorporar al usuario al evento.
+// ======================================================
 
 export async function joinEvent(
 
-  uid:string,
+  uid: string,
 
-  eventoId:string
+  eventoId: string
 
-){
+) {
 
+  try {
 
-  try{
+    if (!uid) {
 
+      throw new Error(
+        "UID de usuario vacío"
+      );
+
+    }
+
+    if (!eventoId) {
+
+      throw new Error(
+        "ID de evento vacío"
+      );
+
+    }
 
     const userRef = doc(
-
       db,
-
       "usuarios",
-
       uid
-
     );
 
+    const snapshot = await getDoc(
+      userRef
+    );
 
+    if (!snapshot.exists()) {
+
+      throw new Error(
+        "El usuario no existe"
+      );
+
+    }
 
     await setDoc(
 
-
       userRef,
-
 
       {
 
-        eventoId,
+        eventoId: eventoId,
 
-        unidoEn:new Date()
+        unidoEn: new Date()
 
       },
 
-
       {
 
-        merge:true
+        merge: true
 
       }
 
-
     );
 
-
-
     console.log(
-      "🎉 Usuario unido:",
+      "🎉 Usuario unido al evento:",
       eventoId
     );
 
+    return true;
 
-
-  }catch(error){
-
+  } catch (error) {
 
     console.error(
       "❌ Error uniéndose al evento:",
       error
     );
 
-
     throw error;
 
-
   }
-
 
 }
