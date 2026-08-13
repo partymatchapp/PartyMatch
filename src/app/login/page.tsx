@@ -1,6 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import {
+  Suspense,
+  useState
+} from "react";
+
 import {
   useRouter,
   useSearchParams
@@ -9,19 +13,26 @@ import {
 import { loginWithUsername } from "@/lib/auth";
 
 
-export default function LoginPage() {
+// ======================================================
+// CONTENIDO DEL LOGIN
+// ======================================================
+
+function LoginContent() {
 
   const router = useRouter();
 
-  const searchParams = useSearchParams();
+  const searchParams =
+    useSearchParams();
 
   const eventoId =
     searchParams.get("evento");
 
 
-  const [username, setUsername] = useState("");
+  const [username, setUsername] =
+    useState("");
 
-  const [password, setPassword] = useState("");
+  const [password, setPassword] =
+    useState("");
 
   const [entrando, setEntrando] =
     useState(false);
@@ -30,6 +41,9 @@ export default function LoginPage() {
     useState("");
 
 
+  // ======================================================
+  // LOGIN
+  // ======================================================
 
   async function handleLogin() {
 
@@ -47,6 +61,11 @@ export default function LoginPage() {
 
       return;
 
+    }
+
+
+    if (entrando) {
+      return;
     }
 
 
@@ -141,6 +160,9 @@ export default function LoginPage() {
   }
 
 
+  // ======================================================
+  // PÁGINA
+  // ======================================================
 
   return (
 
@@ -188,7 +210,9 @@ export default function LoginPage() {
 
 
 
-        {/* USUARIO */}
+        {/* ==================================================
+            USUARIO
+        ================================================== */}
 
         <input
 
@@ -197,12 +221,16 @@ export default function LoginPage() {
           value={username}
 
           onChange={(e) =>
-            setUsername(e.target.value)
+            setUsername(
+              e.target.value
+            )
           }
 
           placeholder="Usuario"
 
           autoComplete="username"
+
+          disabled={entrando}
 
           className="
             w-full
@@ -215,13 +243,16 @@ export default function LoginPage() {
             outline-none
             focus:ring-2
             focus:ring-purple-500
+            disabled:bg-gray-100
           "
 
         />
 
 
 
-        {/* CONTRASEÑA */}
+        {/* ==================================================
+            CONTRASEÑA
+        ================================================== */}
 
         <input
 
@@ -230,12 +261,16 @@ export default function LoginPage() {
           value={password}
 
           onChange={(e) =>
-            setPassword(e.target.value)
+            setPassword(
+              e.target.value
+            )
           }
 
           placeholder="Contraseña"
 
           autoComplete="current-password"
+
+          disabled={entrando}
 
           onKeyDown={(e) => {
 
@@ -258,13 +293,16 @@ export default function LoginPage() {
             outline-none
             focus:ring-2
             focus:ring-purple-500
+            disabled:bg-gray-100
           "
 
         />
 
 
 
-        {/* ERROR */}
+        {/* ==================================================
+            ERROR
+        ================================================== */}
 
         {error && (
 
@@ -286,7 +324,9 @@ export default function LoginPage() {
 
 
 
-        {/* LOGIN */}
+        {/* ==================================================
+            LOGIN
+        ================================================== */}
 
         <button
 
@@ -317,7 +357,9 @@ export default function LoginPage() {
 
 
 
-        {/* CREAR PERFIL */}
+        {/* ==================================================
+            CREAR PERFIL
+        ================================================== */}
 
         <button
 
@@ -339,10 +381,13 @@ export default function LoginPage() {
 
           }}
 
+          disabled={entrando}
+
           className="
             w-full
             bg-black
             hover:bg-slate-800
+            disabled:bg-gray-400
             text-white
             font-bold
             py-3
@@ -358,7 +403,9 @@ export default function LoginPage() {
 
 
 
-        {/* ADMIN */}
+        {/* ==================================================
+            ADMIN
+        ================================================== */}
 
         <button
 
@@ -366,10 +413,13 @@ export default function LoginPage() {
             router.push("/admin")
           }
 
+          disabled={entrando}
+
           className="
             w-full
             bg-slate-200
             hover:bg-slate-300
+            disabled:bg-gray-300
             text-slate-900
             font-bold
             py-3
@@ -387,6 +437,68 @@ export default function LoginPage() {
 
 
     </main>
+
+  );
+
+}
+
+
+// ======================================================
+// PÁGINA LOGIN CON SUSPENSE
+// ======================================================
+
+export default function LoginPage() {
+
+  return (
+
+    <Suspense
+
+      fallback={
+
+        <main className="
+          min-h-screen
+          flex
+          items-center
+          justify-center
+          bg-black
+          text-white
+          p-6
+        ">
+
+          <div className="
+            text-center
+          ">
+
+            <div className="
+              text-5xl
+              mb-4
+            ">
+
+              🎉
+
+            </div>
+
+
+            <p className="
+              text-lg
+              font-semibold
+            ">
+
+              Cargando PartyMatch...
+
+            </p>
+
+          </div>
+
+        </main>
+
+      }
+
+    >
+
+      <LoginContent />
+
+    </Suspense>
 
   );
 
